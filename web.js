@@ -1,13 +1,20 @@
 (function() {
-  var app, express, openid, port, querystring, relyingParty, url;
+  var app, express, jade, openid, port, querystring, relyingParty, url;
   express = require('express');
   openid = require('openid');
   url = require('url');
   querystring = require('querystring');
+  jade = require('jade');
   relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, []);
   app = express.createServer(express.logger());
   app.get('/', function(request, response) {
-    return response.send('<!DOCTYPE html><html><body>' + '<a href="/authenticate">log in</a>' + '</body></html>');
+    return jade.renderFile('views/index.jade', function(error, html) {
+      if (error) {
+        return response.send('Something went wrong: ' + error);
+      } else {
+        return response.send(html);
+      }
+    });
   });
   app.get('/authenticate', function(request, response) {
     var identifier;
@@ -34,6 +41,7 @@
       });
     });
   });
+  app.get('/users', function(request, response) {});
   port = process.env.PORT || 4000;
   app.listen(port, function() {
     return console.log("Listening on " + port);
