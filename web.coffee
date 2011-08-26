@@ -52,9 +52,17 @@ app.get '/verify', (request, response) ->
 
 app.get '/users', (request, response) ->
   db.collection 'users', (err, collection) ->
-    collection.find().toArray (err, items) ->
+    collection.find().toArray (err, users) ->
       if !err
-        response.send items[0].email
+        jade.renderFile 'views/users/index.jade'
+          , locals:
+            title: 'Buffsets.js - Users'
+            , users: users
+          , (error, html) ->
+            if error
+              response.send 'Something went wrong: ' + error
+            else
+              response.send html
       else
         response.send err
 

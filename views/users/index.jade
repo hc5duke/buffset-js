@@ -1,0 +1,10 @@
+!!! 5
+html(lang="en")
+  head
+    title= title
+  body
+    h1 Buffsets - users
+    #container
+      - each user in users
+        p= user.email
+

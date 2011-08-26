@@ -58,9 +58,20 @@
   });
   app.get('/users', function(request, response) {
     return db.collection('users', function(err, collection) {
-      return collection.find().toArray(function(err, items) {
+      return collection.find().toArray(function(err, users) {
         if (!err) {
-          return response.send(items[0].email);
+          return jade.renderFile('views/users/index.jade', {
+            locals: {
+              title: 'Buffsets.js - Users',
+              users: users
+            }
+          }, function(error, html) {
+            if (error) {
+              return response.send('Something went wrong: ' + error);
+            } else {
+              return response.send(html);
+            }
+          });
         } else {
           return response.send(err);
         }
