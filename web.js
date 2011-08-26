@@ -1,11 +1,23 @@
 (function() {
-  var app, express, jade, openid, port, querystring, relyingParty, url;
+  var Db, Server, app, db, express, jade, mongo, openid, port, querystring, relyingParty, server, url;
   express = require('express');
   openid = require('openid');
   url = require('url');
   querystring = require('querystring');
   jade = require('jade');
+  mongo = require('mongodb');
   relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, []);
+  Server = mongo.Server;
+  Db = mongo.Db;
+  server = new Server('localhost', 27017, {
+    auto_reconnect: true
+  });
+  db = new Db('buffsets', server);
+  db.open(function(err, db) {
+    if (!err) {
+      return console.log("We are connected");
+    }
+  });
   app = express.createServer(express.logger());
   app.get('/', function(request, response) {
     return jade.renderFile('views/index.jade', function(error, html) {
@@ -34,14 +46,27 @@
     });
   });
   app.get('/verify', function(request, response) {
-    return relyingParty.verifyAssertion(req, function(error, result) {
-      var _ref;
-      return response.send((_ref = !error && result.authenticated) != null ? _ref : {
-        'Success :)': 'Failure :('
+    return relyingParty.verifyAssertion(request, function(error, result) {
+      console.log(!error);
+      console.log(result.authenticated);
+      if (!error && result.authenticated) {
+        return response.send(result);
+      } else {
+        return response.send('Failure :(');
+      }
+    });
+  });
+  app.get('/users', function(request, response) {
+    return db.collection('users', function(err, collection) {
+      return collection.find().toArray(function(err, items) {
+        if (!err) {
+          return response.send(items[0].email);
+        } else {
+          return response.send(err);
+        }
       });
     });
   });
-  app.get('/users', function(request, response) {});
   port = process.env.PORT || 4000;
   app.listen(port, function() {
     return console.log("Listening on " + port);

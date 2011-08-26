@@ -3,8 +3,16 @@ openid = require 'openid'
 url = require 'url'
 querystring = require 'querystring'
 jade = require 'jade'
+mongo = require 'mongodb'
 relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, false, []
 
+Server = mongo.Server
+Db = mongo.Db
+server = new Server 'localhost', 27017, auto_reconnect: true
+db = new Db 'buffsets', server
+db.open (err, db) ->
+  if !err
+    console.log("We are connected")
 app = express.createServer express.logger()
 
 app.get '/', (request, response) ->
@@ -33,11 +41,22 @@ app.get '/authenticate', (request, response) ->
 
 app.get '/verify', (request, response) ->
   # Verify identity assertion
-  relyingParty.verifyAssertion req, (error, result) ->
-    response.send !error && result.authenticated ? 'Success :)' : 'Failure :('
+  relyingParty.verifyAssertion request, (error, result) ->
+    console.log !error
+    console.log result.authenticated
+    if !error && result.authenticated
+      response.send result
+    else
+      response.send 'Failure :('
 
 
 app.get '/users', (request, response) ->
+  db.collection 'users', (err, collection) ->
+    collection.find().toArray (err, items) ->
+      if !err
+        response.send items[0].email
+      else
+        response.send err
 
 
 port = process.env.PORT || 4000
