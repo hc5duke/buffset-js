@@ -58,7 +58,9 @@
   });
   app.get('/users', function(request, response) {
     return db.collection('users', function(err, collection) {
-      return collection.find().toArray(function(err, users) {
+      return collection.find({
+        active: true
+      }).toArray(function(err, users) {
         if (!err) {
           return jade.renderFile('views/users/index.jade', {
             locals: {

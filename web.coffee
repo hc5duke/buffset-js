@@ -52,7 +52,7 @@ app.get '/verify', (request, response) ->
 
 app.get '/users', (request, response) ->
   db.collection 'users', (err, collection) ->
-    collection.find().toArray (err, users) ->
+    collection.find( active: true ).toArray (err, users) ->
       if !err
         jade.renderFile 'views/users/index.jade'
           , locals:
