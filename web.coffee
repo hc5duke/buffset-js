@@ -30,9 +30,14 @@ app.configure ->
   app.set 'view engine', 'jade'
 
 
-app.get '/', (request, response) ->
-  jade.renderFile 'views/index.jade', (error, html) ->
-    response.send html
+app.get '/', (request, response, next) ->
+  jade.renderFile 'views/index.jade'
+    , locals:
+      title: 'Tapjoy Buffsets.js'
+    , (error, html) ->
+      if error
+        next error
+      response.send html
 
 
 app.get '/authenticate', (request, response) ->
@@ -58,28 +63,30 @@ app.get '/verify', (request, response) ->
       response.send 'Failure :('
 
 
-app.get '/users', (request, response) ->
+app.get '/users', (request, response, next) ->
   db.collection 'users', (err, collection) ->
     collection.find( active: true ).toArray (err, users) ->
       jade.renderFile 'views/users/index.jade'
         , locals:
-          title: 'Buffsets.js - Users'
+          title: 'Tapjoy Buffsets.js - Users'
           , users: users
         , (error, html) ->
+          if error
+            next error
           response.send html
 
 
-app.get '/users/:id', (request, response) ->
+app.get '/users/:id', (request, response, next) ->
   db.collection 'users', (err, collection) ->
-    collection.findOne
-      _id: request.params.id
-      , (err, user) ->
-        jade.renderFile 'views/users/show.jade'
-          , locals:
-            title: 'Buffsets.js - Users'
-            , user: user
-          , (error, html) ->
-            response.send html
+    collection.find( _id:  new db.bson_serializer.ObjectID(request.params.id) ).toArray (err, users) ->
+      jade.renderFile 'views/users/show.jade'
+        , locals:
+          title: 'Tapjoy Buffsets.js - User ' + users[0].name
+          , user: users[0]
+        , (error, html) ->
+          if error
+            next error
+          response.send html
 
 
 port = process.env.PORT || 4000

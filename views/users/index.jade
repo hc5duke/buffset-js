@@ -1,11 +1,26 @@
-!!! 5
-html(lang="en")
-  head
-    title= title
+!!!
+html
+  include ../includes/head
   body
-    h1 Buffsets - users
-    #container
-      - each user in users
-        p
-          a(href='/users/#{user._id}')= user.handle
-        p= user.pushup_set_count
+    include ../includes/toolbar
+    .container
+      section#alerts
+    .container#body
+      #season-number-outside
+        #season-number 2
+      #container
+        each user in users
+          p 1
+    script
+      :plain
+        $('li.menu').click(function(e){
+          if (e.srcElement.className) {
+            $(this).children('ul.menu-dropdown').toggle();
+            return false;
+          }
+        });
+        $('.close').click(function(){
+          $(this).parent().slideUp();
+          return false;
+        });
+

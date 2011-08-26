@@ -1,0 +1,54 @@
+!!!
+%html
+  %head
+  %body
+    .topbar
+      .container.fixed
+        %h3
+          = link_to "Tapjoy Buffset \\m/", root_path, :class => 'logo'
+        %ul.nav
+          %li= link_to 'Board', users_path
+        %ul.nav
+          %li.menu
+            = link_to 'Chart', '#', :class => 'menu'
+            %ul.menu-dropdown
+              %li= link_to 'Competitive', chart_path
+              %li= link_to 'Cumulative', chart_sum_path
+              %li= link_to 'Punch-card', chart_punch_path
+        %ul.nav.secondary-nav
+          = yield :nav_links
+          - if user_signed_in?
+            - if current_user.admin?
+              %li= link_to "#{User.active.count} active / #{User.count} total", admin_users_path
+            %li.menu
+              = link_to current_user.email, '#', :class => 'menu'
+              %ul.menu-dropdown
+                %li= link_to 'Edit profile', edit_user_path(current_user)
+                %li= link_to 'Sign out', signout_services_path
+          - else
+            %li= link_to "Sign in", '/auth/google'
+    .container{:style => 'height: 40px;'}
+    .container
+      %section#alerts
+        - flash.each do |key, value|
+          .alert-message{:class => key}
+            = link_to "&times;".html_safe, '#', :class => "close"
+            = value
+    .container#body
+      #season-number-outside
+        #season-number 2
+      = yield
+    %script
+      = yield :page_javascript
+      :plain
+        $('li.menu').click(function(e){
+          if (e.srcElement.className) {
+            $(this).children('ul.menu-dropdown').toggle();
+            return false;
+          }
+        });
+        $('.close').click(function(){
+          $(this).parent().slideUp();
+          return false;
+        });
+

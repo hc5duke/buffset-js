@@ -39,8 +39,15 @@
     app.set('views', __dirname + '/views');
     return app.set('view engine', 'jade');
   });
-  app.get('/', function(request, response) {
-    return jade.renderFile('views/index.jade', function(error, html) {
+  app.get('/', function(request, response, next) {
+    return jade.renderFile('views/index.jade', {
+      locals: {
+        title: 'Tapjoy Buffsets.js'
+      }
+    }, function(error, html) {
+      if (error) {
+        next(error);
+      }
       return response.send(html);
     });
   });
@@ -70,33 +77,39 @@
       }
     });
   });
-  app.get('/users', function(request, response) {
+  app.get('/users', function(request, response, next) {
     return db.collection('users', function(err, collection) {
       return collection.find({
         active: true
       }).toArray(function(err, users) {
         return jade.renderFile('views/users/index.jade', {
           locals: {
-            title: 'Buffsets.js - Users',
+            title: 'Tapjoy Buffsets.js - Users',
             users: users
           }
         }, function(error, html) {
+          if (error) {
+            next(error);
+          }
           return response.send(html);
         });
       });
     });
   });
-  app.get('/users/:id', function(request, response) {
+  app.get('/users/:id', function(request, response, next) {
     return db.collection('users', function(err, collection) {
-      return collection.findOne({
-        _id: request.params.id
-      }, function(err, user) {
+      return collection.find({
+        _id: new db.bson_serializer.ObjectID(request.params.id)
+      }).toArray(function(err, users) {
         return jade.renderFile('views/users/show.jade', {
           locals: {
-            title: 'Buffsets.js - Users',
-            user: user
+            title: 'Tapjoy Buffsets.js - User ' + users[0].name,
+            user: users[0]
           }
         }, function(error, html) {
+          if (error) {
+            next(error);
+          }
           return response.send(html);
         });
       });
