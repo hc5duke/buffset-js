@@ -15,19 +15,27 @@ db.open (err, db) ->
     console.log("We are connected")
 app = express.createServer express.logger()
 
+app.configure 'development', ->
+  app.use express.static __dirname + '/public'
+  app.use express.errorHandler dumpExceptions: true, showStack: true
+
+app.configure 'production', ->
+  oneYear = 31557600000
+  app.use express.static __dirname + '/public', maxAge: oneYear
+  app.use express.errorHandler()
+
+
+app.set 'views', __dirname + '/views'
+app.set 'view engine', 'jade'
+
+
 app.get '/', (request, response) ->
-  jade.renderFile 'views/index.jade', (error, html) ->
-    if error
-      response.send 'Something went wrong: ' + error
-    else
-      response.send html
+  response.render 'index'
 
 
 app.get '/authenticate', (request, response) ->
-  # User supplied identifier
   identifier = 'https://www.google.com/accounts/o8/id'
 
-  # Resolve identifier, associate, and build authentication URL
   relyingParty.authenticate identifier, false, (error, authUrl) ->
     if error
       response.send 'Authentication failed: ' + error
@@ -42,8 +50,6 @@ app.get '/authenticate', (request, response) ->
 app.get '/verify', (request, response) ->
   # Verify identity assertion
   relyingParty.verifyAssertion request, (error, result) ->
-    console.log !error
-    console.log result.authenticated
     if !error && result.authenticated
       response.send result
     else
@@ -53,18 +59,26 @@ app.get '/verify', (request, response) ->
 app.get '/users', (request, response) ->
   db.collection 'users', (err, collection) ->
     collection.find( active: true ).toArray (err, users) ->
-      if !err
-        jade.renderFile 'views/users/index.jade'
-          , locals:
-            title: 'Buffsets.js - Users'
-            , users: users
-          , (error, html) ->
-            if error
-              response.send 'Something went wrong: ' + error
-            else
-              response.send html
-      else
-        response.send err
+      jade.renderFile 'views/users/index.jade'
+        , locals:
+          title: 'Buffsets.js - Users'
+          , users: users
+        , (error, html) ->
+          response.send html
+
+
+app.get '/users/:id', (request, response) ->
+  db.collection 'users', (err, collection) ->
+    collection.findOne _id: request.params.id, (err, user) ->
+      jade.renderFile 'views/users/show.jade'
+        , locals:
+          title: 'Buffsets.js - Users'
+          , user: user
+        , (error, html) ->
+          console.log request.params.id
+          console.log err
+          console.log user
+          response.send html
 
 
 port = process.env.PORT || 4000

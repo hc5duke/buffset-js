@@ -19,14 +19,25 @@
     }
   });
   app = express.createServer(express.logger());
+  app.configure('development', function() {
+    app.use(express.static(__dirname + '/public'));
+    return app.use(express.errorHandler({
+      dumpExceptions: true,
+      showStack: true
+    }));
+  });
+  app.configure('production', function() {
+    var oneYear;
+    oneYear = 31557600000;
+    app.use(express.static(__dirname + '/public', {
+      maxAge: oneYear
+    }));
+    return app.use(express.errorHandler());
+  });
+  app.set('views', __dirname + '/views');
+  app.set('view engine', 'jade');
   app.get('/', function(request, response) {
-    return jade.renderFile('views/index.jade', function(error, html) {
-      if (error) {
-        return response.send('Something went wrong: ' + error);
-      } else {
-        return response.send(html);
-      }
-    });
+    return response.render('index');
   });
   app.get('/authenticate', function(request, response) {
     var identifier;
@@ -47,8 +58,6 @@
   });
   app.get('/verify', function(request, response) {
     return relyingParty.verifyAssertion(request, function(error, result) {
-      console.log(!error);
-      console.log(result.authenticated);
       if (!error && result.authenticated) {
         return response.send(result);
       } else {
@@ -61,22 +70,33 @@
       return collection.find({
         active: true
       }).toArray(function(err, users) {
-        if (!err) {
-          return jade.renderFile('views/users/index.jade', {
-            locals: {
-              title: 'Buffsets.js - Users',
-              users: users
-            }
-          }, function(error, html) {
-            if (error) {
-              return response.send('Something went wrong: ' + error);
-            } else {
-              return response.send(html);
-            }
-          });
-        } else {
-          return response.send(err);
-        }
+        return jade.renderFile('views/users/index.jade', {
+          locals: {
+            title: 'Buffsets.js - Users',
+            users: users
+          }
+        }, function(error, html) {
+          return response.send(html);
+        });
+      });
+    });
+  });
+  app.get('/users/:id', function(request, response) {
+    return db.collection('users', function(err, collection) {
+      return collection.findOne({
+        _id: request.params.id
+      }, function(err, user) {
+        return jade.renderFile('views/users/show.jade', {
+          locals: {
+            title: 'Buffsets.js - Users',
+            user: user
+          }
+        }, function(error, html) {
+          console.log(request.params.id);
+          console.log(err);
+          console.log(user);
+          return response.send(html);
+        });
       });
     });
   });
