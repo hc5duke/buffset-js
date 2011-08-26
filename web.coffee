@@ -1,4 +1,5 @@
 express = require 'express'
+connect = require 'connect'
 openid = require 'openid'
 url = require 'url'
 querystring = require 'querystring'
@@ -24,13 +25,14 @@ app.configure 'production', ->
   app.use express.static __dirname + '/public', maxAge: oneYear
   app.use express.errorHandler()
 
-
-app.set 'views', __dirname + '/views'
-app.set 'view engine', 'jade'
+app.configure ->
+  app.set 'views', __dirname + '/views'
+  app.set 'view engine', 'jade'
 
 
 app.get '/', (request, response) ->
-  response.render 'index'
+  jade.renderFile 'views/index.jade', (error, html) ->
+    response.send html
 
 
 app.get '/authenticate', (request, response) ->
@@ -69,16 +71,15 @@ app.get '/users', (request, response) ->
 
 app.get '/users/:id', (request, response) ->
   db.collection 'users', (err, collection) ->
-    collection.findOne _id: request.params.id, (err, user) ->
-      jade.renderFile 'views/users/show.jade'
-        , locals:
-          title: 'Buffsets.js - Users'
-          , user: user
-        , (error, html) ->
-          console.log request.params.id
-          console.log err
-          console.log user
-          response.send html
+    collection.findOne
+      _id: request.params.id
+      , (err, user) ->
+        jade.renderFile 'views/users/show.jade'
+          , locals:
+            title: 'Buffsets.js - Users'
+            , user: user
+          , (error, html) ->
+            response.send html
 
 
 port = process.env.PORT || 4000

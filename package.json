@@ -2,9 +2,10 @@
   "name": "buffset-js",
   "version": "0.0.1",
   "dependencies": {
-    "express": "2.2.0",
-  , "jade": "0.13.0",
+    "express": "2.2.0"
+  , "connect": "1.6.2"
+  , "jade": "0.13.0"
   , "openid": "0.2.0"
-  , "mongodb": "0.9.6"
+  , "mongodb": "0.9.6-11"
   }
 }

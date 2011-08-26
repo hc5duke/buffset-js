@@ -1,6 +1,7 @@
 (function() {
-  var Db, Server, app, db, express, jade, mongo, openid, port, querystring, relyingParty, server, url;
+  var Db, Server, app, connect, db, express, jade, mongo, openid, port, querystring, relyingParty, server, url;
   express = require('express');
+  connect = require('connect');
   openid = require('openid');
   url = require('url');
   querystring = require('querystring');
@@ -34,10 +35,14 @@
     }));
     return app.use(express.errorHandler());
   });
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'jade');
+  app.configure(function() {
+    app.set('views', __dirname + '/views');
+    return app.set('view engine', 'jade');
+  });
   app.get('/', function(request, response) {
-    return response.render('index');
+    return jade.renderFile('views/index.jade', function(error, html) {
+      return response.send(html);
+    });
   });
   app.get('/authenticate', function(request, response) {
     var identifier;
@@ -92,9 +97,6 @@
             user: user
           }
         }, function(error, html) {
-          console.log(request.params.id);
-          console.log(err);
-          console.log(user);
           return response.send(html);
         });
       });
