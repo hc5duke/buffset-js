@@ -21,7 +21,7 @@
           li
             a(href='/admin/users') #{active_users_count} active / #{users_count} total
         li.menu
-          a.menu(href='#')= current_user.email
+          a.menu(href='#') current_user.email
           ul.menu-dropdown
             li
               a(href='/users/1/edit') Edit profile

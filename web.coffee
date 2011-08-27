@@ -9,12 +9,12 @@ relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, fa
 
 Server = mongo.Server
 Db = mongo.Db
-server = new Server 'localhost', 27017, auto_reconnect: true
-db = new Db 'buffsets', server
-db.open (err, db) ->
-  if !err
-    console.log("We are connected")
 app = express.createServer express.logger()
+dbHost = 'localhost'
+dbPort = 27017
+dbUser = ''
+dbPass = ''
+dbName = 'buffsets'
 
 app.configure 'development', ->
   app.use express.static __dirname + '/public'
@@ -24,11 +24,31 @@ app.configure 'production', ->
   oneYear = 31557600000
   app.use express.static __dirname + '/public', maxAge: oneYear
   app.use express.errorHandler()
+  arr = process.env.MONGOHQ_URL.split(/:|@|\//)
+  dbUser = arr[3]
+  dbPass = arr[4]
+  dbHost = arr[5]
+  dbPort = arr[6]
+  dbName = arr[7]
+
 
 app.configure ->
   app.set 'views', __dirname + '/views'
   app.set 'view engine', 'jade'
 
+server = new Server dbHost, dbPort, auto_reconnect: true
+db = new Db dbName, server
+db.open (err, db) ->
+  if !err
+    console.log "MongoDB connected"
+    if dbUser && dbPass
+      db.authenticate dbUser, dbPass, (err) ->
+        if err
+          console.log err
+        else
+          console.log "MongoDB authenticated"
+  else
+    console.log err
 
 app.get '/', (request, response, next) ->
   jade.renderFile 'views/index.jade'
@@ -66,6 +86,8 @@ app.get '/verify', (request, response) ->
 app.get '/users', (request, response, next) ->
   db.collection 'users', (err, collection) ->
     collection.find( active: true ).toArray (err, users) ->
+      if err
+        next(err)
       jade.renderFile 'views/users/index.jade'
         , locals:
           title: 'Tapjoy Buffsets.js - Users'

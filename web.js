@@ -1,5 +1,5 @@
 (function() {
-  var Db, Server, app, connect, db, express, jade, mongo, openid, port, querystring, relyingParty, server, url;
+  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, jade, mongo, openid, port, querystring, relyingParty, server, url;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -10,16 +10,12 @@
   relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, []);
   Server = mongo.Server;
   Db = mongo.Db;
-  server = new Server('localhost', 27017, {
-    auto_reconnect: true
-  });
-  db = new Db('buffsets', server);
-  db.open(function(err, db) {
-    if (!err) {
-      return console.log("We are connected");
-    }
-  });
   app = express.createServer(express.logger());
+  dbHost = 'localhost';
+  dbPort = 27017;
+  dbUser = '';
+  dbPass = '';
+  dbName = 'buffsets';
   app.configure('development', function() {
     app.use(express.static(__dirname + '/public'));
     return app.use(express.errorHandler({
@@ -28,16 +24,42 @@
     }));
   });
   app.configure('production', function() {
-    var oneYear;
+    var arr, oneYear;
     oneYear = 31557600000;
     app.use(express.static(__dirname + '/public', {
       maxAge: oneYear
     }));
-    return app.use(express.errorHandler());
+    app.use(express.errorHandler());
+    arr = process.env.MONGOHQ_URL.split(/:|@|\//);
+    dbUser = arr[3];
+    dbPass = arr[4];
+    dbHost = arr[5];
+    dbPort = arr[6];
+    return dbName = arr[7];
   });
+  console.log('>>>>' + [dbUser, dbPass, dbHost, dbPort, dbName].join(','));
+  console.log('>>>' + process.env.MONGOHQ_URL);
   app.configure(function() {
     app.set('views', __dirname + '/views');
     return app.set('view engine', 'jade');
+  });
+  server = new Server(dbHost, dbPort, {
+    auto_reconnect: true
+  });
+  db = new Db(dbName, server);
+  db.open(function(err, db) {
+    if (!err) {
+      console.log("We are connected");
+      if (dbUser && dbPass) {
+        return db.authenticate(dbUser, dbPass, function(err) {
+          if (err) {
+            return console.log(err);
+          }
+        });
+      }
+    } else {
+      return console.log(err);
+    }
   });
   app.get('/', function(request, response, next) {
     return jade.renderFile('views/index.jade', {
@@ -82,6 +104,11 @@
       return collection.find({
         active: true
       }).toArray(function(err, users) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log(users.length);
+        }
         return jade.renderFile('views/users/index.jade', {
           locals: {
             title: 'Tapjoy Buffsets.js - Users',
