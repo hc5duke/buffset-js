@@ -5,6 +5,7 @@ url = require 'url'
 querystring = require 'querystring'
 jade = require 'jade'
 mongo = require 'mongodb'
+_ = require 'underscore'
 relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, false, []
 
 Server = mongo.Server
@@ -51,37 +52,6 @@ db.open (err, db) ->
   else
     console.log err
 
-app.get '/', (request, response, next) ->
-  jade.renderFile 'views/index.jade'
-    , locals:
-      title: 'Tapjoy Buffsets.js'
-    , (error, html) ->
-      if error
-        next error
-      response.send html
-
-
-app.get '/authenticate', (request, response) ->
-  identifier = 'https://www.google.com/accounts/o8/id'
-
-  relyingParty.authenticate identifier, false, (error, authUrl) ->
-    if error
-      response.send 'Authentication failed: ' + error
-    else if !authUrl
-      response.send 'Authentication failed'
-    else
-      console.log authUrl
-      response.writeHead 302, Location: authUrl
-      response.end()
-
-
-app.get '/verify', (request, response) ->
-  # Verify identity assertion
-  relyingParty.verifyAssertion request, (error, result) ->
-    if !error && result.authenticated
-      response.send result
-    else
-      response.send 'Failure :('
 
 helpers =
   fives: (num, unit, one, five, ten) ->
@@ -138,20 +108,55 @@ helpers =
     else
       "0"
 
+getLocals = (more) ->
+  _.extend more, active_users_count: 2
+    , users_count: 3
+    , admin: true
+    , helpers: helpers
+
+
+app.get '/', (request, response, next) ->
+  locals = getLocals title: 'Tapjoy Buffsets.js'
+  jade.renderFile 'views/index.jade'
+    , locals: locals
+    , (error, html) ->
+      next error if error
+      response.send html
+
+
+app.get '/authenticate', (request, response) ->
+  identifier = 'https://www.google.com/accounts/o8/id'
+
+  relyingParty.authenticate identifier, false, (error, authUrl) ->
+    if error
+      response.send 'Authentication failed: ' + error
+    else if !authUrl
+      response.send 'Authentication failed'
+    else
+      console.log authUrl
+      response.writeHead 302, Location: authUrl
+      response.end()
+
+
+app.get '/verify', (request, response) ->
+  # Verify identity assertion
+  relyingParty.verifyAssertion request, (error, result) ->
+    if !error && result.authenticated
+      response.send result
+    else
+      response.send 'Failure :('
+
+
 app.get '/users', (request, response, next) ->
   db.collection 'users', (err, collection) ->
     collection.find( active: true ).toArray (err, users) ->
-      if err
-        next(err)
+      next(err) if err
+      locals = getLocals
+        title: 'Tapjoy Buffsets.js - Users'
+        , users: users
+        , current_user: users[0]
       jade.renderFile 'views/users/index.jade'
-        , locals:
-          title: 'Tapjoy Buffsets.js - Users'
-          , users: users
-          , current_user: users[0]
-          , active_users_count: 2
-          , users_count: 3
-          , admin: true
-          , helpers: helpers
+        , locals: locals
         , (error, html) ->
           if error
             next error
@@ -161,10 +166,14 @@ app.get '/users', (request, response, next) ->
 app.get '/users/:id', (request, response, next) ->
   db.collection 'users', (err, collection) ->
     collection.find( _id:  new db.bson_serializer.ObjectID(request.params.id) ).toArray (err, users) ->
+      next(err) if err
+      locals = getLocals
+        title: 'Tapjoy Buffsets.js - User ' + users[0].name
+        , user: users[0]
+        , users: users
+        , current_user: users[0]
       jade.renderFile 'views/users/show.jade'
-        , locals:
-          title: 'Tapjoy Buffsets.js - User ' + users[0].name
-          , user: users[0]
+        , locals: locals
         , (error, html) ->
           if error
             next error

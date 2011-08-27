@@ -1,5 +1,5 @@
 (function() {
-  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, helpers, jade, mongo, openid, port, querystring, relyingParty, server, url;
+  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, getLocals, helpers, jade, mongo, openid, port, querystring, relyingParty, server, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -7,6 +7,7 @@
   querystring = require('querystring');
   jade = require('jade');
   mongo = require('mongodb');
+  _ = require('underscore');
   relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, []);
   Server = mongo.Server;
   Db = mongo.Db;
@@ -61,44 +62,6 @@
     } else {
       return console.log(err);
     }
-  });
-  app.get('/', function(request, response, next) {
-    return jade.renderFile('views/index.jade', {
-      locals: {
-        title: 'Tapjoy Buffsets.js'
-      }
-    }, function(error, html) {
-      if (error) {
-        next(error);
-      }
-      return response.send(html);
-    });
-  });
-  app.get('/authenticate', function(request, response) {
-    var identifier;
-    identifier = 'https://www.google.com/accounts/o8/id';
-    return relyingParty.authenticate(identifier, false, function(error, authUrl) {
-      if (error) {
-        return response.send('Authentication failed: ' + error);
-      } else if (!authUrl) {
-        return response.send('Authentication failed');
-      } else {
-        console.log(authUrl);
-        response.writeHead(302, {
-          Location: authUrl
-        });
-        return response.end();
-      }
-    });
-  });
-  app.get('/verify', function(request, response) {
-    return relyingParty.verifyAssertion(request, function(error, result) {
-      if (!error && result.authenticated) {
-        return response.send(result);
-      } else {
-        return response.send('Failure :(');
-      }
-    });
   });
   helpers = {
     fives: function(num, unit, one, five, ten) {
@@ -181,24 +144,70 @@
       }
     }
   };
+  getLocals = function(more) {
+    return _.extend(more, {
+      active_users_count: 2,
+      users_count: 3,
+      admin: true,
+      helpers: helpers
+    });
+  };
+  app.get('/', function(request, response, next) {
+    var locals;
+    locals = getLocals({
+      title: 'Tapjoy Buffsets.js'
+    });
+    return jade.renderFile('views/index.jade', {
+      locals: locals
+    }, function(error, html) {
+      if (error) {
+        next(error);
+      }
+      return response.send(html);
+    });
+  });
+  app.get('/authenticate', function(request, response) {
+    var identifier;
+    identifier = 'https://www.google.com/accounts/o8/id';
+    return relyingParty.authenticate(identifier, false, function(error, authUrl) {
+      if (error) {
+        return response.send('Authentication failed: ' + error);
+      } else if (!authUrl) {
+        return response.send('Authentication failed');
+      } else {
+        console.log(authUrl);
+        response.writeHead(302, {
+          Location: authUrl
+        });
+        return response.end();
+      }
+    });
+  });
+  app.get('/verify', function(request, response) {
+    return relyingParty.verifyAssertion(request, function(error, result) {
+      if (!error && result.authenticated) {
+        return response.send(result);
+      } else {
+        return response.send('Failure :(');
+      }
+    });
+  });
   app.get('/users', function(request, response, next) {
     return db.collection('users', function(err, collection) {
       return collection.find({
         active: true
       }).toArray(function(err, users) {
+        var locals;
         if (err) {
           next(err);
         }
+        locals = getLocals({
+          title: 'Tapjoy Buffsets.js - Users',
+          users: users,
+          current_user: users[0]
+        });
         return jade.renderFile('views/users/index.jade', {
-          locals: {
-            title: 'Tapjoy Buffsets.js - Users',
-            users: users,
-            current_user: users[0],
-            active_users_count: 2,
-            users_count: 3,
-            admin: true,
-            helpers: helpers
-          }
+          locals: locals
         }, function(error, html) {
           if (error) {
             next(error);
@@ -213,11 +222,18 @@
       return collection.find({
         _id: new db.bson_serializer.ObjectID(request.params.id)
       }).toArray(function(err, users) {
+        var locals;
+        if (err) {
+          next(err);
+        }
+        locals = getLocals({
+          title: 'Tapjoy Buffsets.js - User ' + users[0].name,
+          user: users[0],
+          users: users,
+          current_user: users[0]
+        });
         return jade.renderFile('views/users/show.jade', {
-          locals: {
-            title: 'Tapjoy Buffsets.js - User ' + users[0].name,
-            user: users[0]
-          }
+          locals: locals
         }, function(error, html) {
           if (error) {
             next(error);
