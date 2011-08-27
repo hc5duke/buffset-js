@@ -37,8 +37,6 @@
     dbPort = arr[6];
     return dbName = arr[7];
   });
-  console.log('>>>>' + [dbUser, dbPass, dbHost, dbPort, dbName].join(','));
-  console.log('>>>' + process.env.MONGOHQ_URL);
   app.configure(function() {
     app.set('views', __dirname + '/views');
     return app.set('view engine', 'jade');
@@ -49,11 +47,13 @@
   db = new Db(dbName, server);
   db.open(function(err, db) {
     if (!err) {
-      console.log("We are connected");
+      console.log("MongoDB connected");
       if (dbUser && dbPass) {
         return db.authenticate(dbUser, dbPass, function(err) {
           if (err) {
             return console.log(err);
+          } else {
+            return console.log("MongoDB authenticated");
           }
         });
       }
@@ -105,9 +105,7 @@
         active: true
       }).toArray(function(err, users) {
         if (err) {
-          console.log(err);
-        } else {
-          console.log(users.length);
+          next(err);
         }
         return jade.renderFile('views/users/index.jade', {
           locals: {
