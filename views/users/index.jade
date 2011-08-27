@@ -20,7 +20,7 @@ html
                   a(href = 'show_user')= user.handle
               - if (user == current_user)
                 .count#edit_current_user
-                  a(href = '#')= user.pushup_set_count
+                  a(href = '#')= helpers.tallyize(user.pushup_set_count)
                 .hidden#edit_current_user_form
                   form_for user do |f|
                   f.number_field :pushup_set_count, :min => 0, :max => 9999, :size => 6
