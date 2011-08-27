@@ -82,6 +82,9 @@ app.get '/verify', (request, response) ->
     else
       response.send 'Failure :('
 
+helpers =
+  tallyize: (number) ->
+    number * number
 
 app.get '/users', (request, response, next) ->
   db.collection 'users', (err, collection) ->
@@ -96,6 +99,7 @@ app.get '/users', (request, response, next) ->
           , active_users_count: 2
           , users_count: 3
           , admin: true
+          , helpers: helpers
         , (error, html) ->
           if error
             next error

@@ -27,7 +27,7 @@ html
                   f.submit 'save'
                   button_to 'cancel', '#', :id => 'cancel_edit'
               - else
-                .count= user.pushup_set_count
+                .count= helpers.tallyize(user.pushup_set_count)
 
     script
       $('li.menu').click(function(e){

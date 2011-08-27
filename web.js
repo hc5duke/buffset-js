@@ -1,5 +1,5 @@
 (function() {
-  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, jade, mongo, openid, port, querystring, relyingParty, server, url;
+  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, helpers, jade, mongo, openid, port, querystring, relyingParty, server, url;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -99,6 +99,11 @@
       }
     });
   });
+  helpers = {
+    tallyize: function(number) {
+      return number * number;
+    }
+  };
   app.get('/users', function(request, response, next) {
     return db.collection('users', function(err, collection) {
       return collection.find({
@@ -114,7 +119,8 @@
             current_user: users[0],
             active_users_count: 2,
             users_count: 3,
-            admin: true
+            admin: true,
+            helpers: helpers
           }
         }, function(error, html) {
           if (error) {
