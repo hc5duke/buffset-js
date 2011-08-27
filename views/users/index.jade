@@ -22,21 +22,14 @@ html
                 .count#edit_current_user
                   a(href = '#')= helpers.tallyize(user.pushup_set_count)
                 .hidden#edit_current_user_form
-                  form_for user do |f|
-                  f.number_field :pushup_set_count, :min => 0, :max => 9999, :size => 6
-                  f.submit 'save'
-                  button_to 'cancel', '#', :id => 'cancel_edit'
+                  form.edit_user#edit_user_1(action="/users/1", method="post")
+                    input#user_pushup_set_count(max="3999", min="0", name="user[pushup_set_count]", size="6", type="number", value="#{user.pushup_set_count}")
+                    input#user_submit(name="commit", type="submit", value="save")
+                    div
+                      input#cancel_edit(type="submit", value="cancel")
               - else
                 .count= helpers.tallyize(user.pushup_set_count)
 
+    include ../includes/footer
     script
-      $('li.menu').click(function(e){
-        if (e.srcElement.className) {
-          $(this).children('ul.menu-dropdown').toggle();
-          return false;
-        }
-      });
-      $('.close').click(function(){
-        $(this).parent().slideUp();
-        return false;
-      });
+      var usersHash = {}
