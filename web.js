@@ -85,7 +85,11 @@
         return jade.renderFile('views/users/index.jade', {
           locals: {
             title: 'Tapjoy Buffsets.js - Users',
-            users: users
+            users: users,
+            current_user: users[0],
+            active_users_count: 2,
+            users_count: 3,
+            admin: true
           }
         }, function(error, html) {
           if (error) {

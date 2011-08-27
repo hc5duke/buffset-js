@@ -70,6 +70,10 @@ app.get '/users', (request, response, next) ->
         , locals:
           title: 'Tapjoy Buffsets.js - Users'
           , users: users
+          , current_user: users[0]
+          , active_users_count: 2
+          , users_count: 3
+          , admin: true
         , (error, html) ->
           if error
             next error

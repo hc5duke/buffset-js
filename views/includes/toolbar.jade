@@ -16,20 +16,19 @@
           li
             a(href='/chart/punch') Punch-card
     ul.nav.secondary-nav
-      / nav_links
-      if true #user_signed_in?
-        if true #current_user.admin?
+      - if (true || user_signed_in)
+        - if (admin)
           li
-            a(href='/admin/users') (User.active.count) active / (User.count) total
+            a(href='/admin/users') #{active_users_count} active / #{users_count} total
         li.menu
-          a.menu(href='#') current_user.email
+          a.menu(href='#')= current_user.email
           ul.menu-dropdown
             li
               a(href='/users/1/edit') Edit profile
                 edit_user_path(current_user)
             li
               a(href='/services/signout') Sign out
-      else
+      - else
         li
           a(href='/auth/google') Sign in
 .container(style = 'height: 40px;')
