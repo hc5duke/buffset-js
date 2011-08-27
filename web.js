@@ -39,7 +39,8 @@
   });
   app.configure(function() {
     app.set('views', __dirname + '/views');
-    return app.set('view engine', 'jade');
+    app.set('view engine', 'jade');
+    return app.use(express.bodyParser());
   });
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
@@ -223,6 +224,19 @@
           }
           return response.send(html);
         });
+      });
+    });
+  });
+  app.post('/users/:id', function(request, response, next) {
+    var user;
+    user = {
+      pushup_set_count: request.body.user.pushup_set_count
+    };
+    return db.collection('users', function(err, collection) {
+      return collection.update({}, {
+        $set: user
+      }, {}, function(err) {
+        return response.redirect('back');
       });
     });
   });

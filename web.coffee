@@ -35,6 +35,7 @@ app.configure 'production', ->
 app.configure ->
   app.set 'views', __dirname + '/views'
   app.set 'view engine', 'jade'
+  app.use express.bodyParser()
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
@@ -168,6 +169,17 @@ app.get '/users/:id', (request, response, next) ->
           if error
             next error
           response.send html
+
+
+app.post '/users/:id', (request, response, next) ->
+  user = pushup_set_count: request.body.user.pushup_set_count
+  db.collection 'users', (err, collection) ->
+    collection.update {}
+      , $set : user
+      , { }
+      , (err) ->
+        response.redirect 'back'
+
 
 
 port = process.env.PORT || 4000
