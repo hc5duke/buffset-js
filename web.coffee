@@ -5,6 +5,7 @@ url = require 'url'
 querystring = require 'querystring'
 jade = require 'jade'
 mongo = require 'mongodb'
+redis = require 'connect-redis'
 _ = require 'underscore'
 
 extensions = [
@@ -13,11 +14,11 @@ extensions = [
     "http://axschema.org/namePerson/first": "required",
 ]
 
-console.log extensions
 relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, false, extensions
 
 Server = mongo.Server
 Db = mongo.Db
+RedisStore = redis express
 app = express.createServer express.logger()
 dbHost = 'localhost'
 dbPort = 27017
@@ -45,6 +46,9 @@ app.configure ->
   app.set 'views', __dirname + '/views'
   app.set 'view engine', 'jade'
   app.use express.bodyParser()
+  app.use express.cookieParser()
+  # app.use express.session secret: "keyboard cat", store: new RedisStore
+
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
@@ -199,6 +203,25 @@ app.post '/users/:id', (request, response, next) ->
         response.redirect 'back'
 
 
+
+
+# app.post('/add-to-cart', function(req, res){
+#   // Perhaps we posted several items with a form
+#   // (use the bodyParser() middleware for this)
+#   var items = req.body.items;
+#   req.session.items = items;
+#   res.redirect('back');
+# });
+#
+# app.get('/add-to-cart', function(req, res){
+#   // When redirected back to GET /add-to-cart
+#   // we could check req.session.items && req.session.items.length
+#   // to print out a message
+#   if (req.session.items && req.session.items.length) {
+#     req.flash('info', 'You have %s items in your cart', req.session.items.length);
+#   }
+#   res.render('shopping-cart');
+# });
 
 port = process.env.PORT || 4000
 app.listen port, ->

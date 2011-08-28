@@ -1,5 +1,5 @@
 (function() {
-  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, getLocals, helpers, jade, mongo, openid, port, querystring, relyingParty, server, url, _;
+  var Db, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, getLocals, helpers, jade, mongo, openid, port, querystring, redis, relyingParty, server, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -7,6 +7,7 @@
   querystring = require('querystring');
   jade = require('jade');
   mongo = require('mongodb');
+  redis = require('connect-redis');
   _ = require('underscore');
   extensions = [
     new openid.AttributeExchange({
@@ -14,10 +15,10 @@
       "http://axschema.org/namePerson/first": "required"
     })
   ];
-  console.log(extensions);
   relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, extensions);
   Server = mongo.Server;
   Db = mongo.Db;
+  RedisStore = redis(express);
   app = express.createServer(express.logger());
   dbHost = 'localhost';
   dbPort = 27017;
@@ -48,7 +49,8 @@
   app.configure(function() {
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
-    return app.use(express.bodyParser());
+    app.use(express.bodyParser());
+    return app.use(express.cookieParser());
   });
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
