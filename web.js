@@ -12,7 +12,8 @@
   extensions = [
     new openid.AttributeExchange({
       "http://axschema.org/contact/email": "required",
-      "http://axschema.org/namePerson/first": "required"
+      "http://axschema.org/namePerson/first": "required",
+      "http://axschema.org/namePerson/last": "required"
     })
   ];
   relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, extensions);
@@ -25,32 +26,48 @@
   dbUser = '';
   dbPass = '';
   dbName = 'buffsets';
-  app.configure('development', function() {
-    app.use(express.static(__dirname + '/public'));
-    return app.use(express.errorHandler({
-      dumpExceptions: true,
-      showStack: true
-    }));
-  });
-  app.configure('production', function() {
-    var arr, oneYear;
-    oneYear = 31557600000;
-    app.use(express.static(__dirname + '/public', {
-      maxAge: oneYear
-    }));
-    app.use(express.errorHandler());
-    arr = process.env.MONGOHQ_URL.split(/:|@|\//);
-    dbUser = arr[3];
-    dbPass = arr[4];
-    dbHost = arr[5];
-    dbPort = arr[6];
-    return dbName = arr[7];
-  });
   app.configure(function() {
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
     app.use(express.bodyParser());
     return app.use(express.cookieParser());
+  });
+  app.configure('development', function() {
+    app.use(express.static(__dirname + '/public'));
+    app.use(express.errorHandler({
+      dumpExceptions: true,
+      showStack: true
+    }));
+    return app.use(express.session({
+      secret: "keyboard cat",
+      store: new RedisStore({
+        maxAge: 24 * 60 * 60 * 1000
+      })
+    }));
+  });
+  app.configure('production', function() {
+    var arr, oneYear, redisConfig;
+    oneYear = 31557600000;
+    app.use(express.static(__dirname + '/public', {
+      maxAge: oneYear
+    }));
+    app.use(express.errorHandler());
+    arr = (process.env.MONGOHQ_URL || '').split(/:|@|\//);
+    dbUser = arr[3];
+    dbPass = arr[4];
+    dbHost = arr[5];
+    dbPort = arr[6];
+    dbName = arr[7];
+    redisConfig = (process.env.REDISTOGO_URL || '').split(/:|@|\//);
+    return app.use(express.session({
+      secret: "keyboard cat",
+      store: new RedisStore({
+        maxAge: 90 * 24 * 60 * 60 * 1000,
+        pass: redisConfig[4],
+        host: redisConfig[5],
+        port: redisConfig[6]
+      })
+    }));
   });
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
@@ -264,6 +281,17 @@
         return response.redirect('back');
       });
     });
+  });
+  app.get('/cart/add/:item', function(req, res) {
+    req.session.items = req.session.items || [];
+    req.session.items.push(req.params.item);
+    return res.send('cart is now ' + '[' + req.session.items.join(',') + ']');
+  });
+  app.get('/cart', function(req, res) {
+    req.session.items = req.session.items || [];
+    if (req.session.items && req.session.items.length) {
+      return res.send('shopping-cart: ' + req.session.items.join(','));
+    }
   });
   port = process.env.PORT || 4000;
   app.listen(port, function() {

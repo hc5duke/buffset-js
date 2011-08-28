@@ -10,8 +10,9 @@ _ = require 'underscore'
 
 extensions = [
   new openid.AttributeExchange
-    "http://axschema.org/contact/email": "required",
-    "http://axschema.org/namePerson/first": "required",
+    "http://axschema.org/contact/email": "required"
+    "http://axschema.org/namePerson/first": "required"
+    "http://axschema.org/namePerson/last": "required"
 ]
 
 relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, false, extensions
@@ -26,28 +27,38 @@ dbUser = ''
 dbPass = ''
 dbName = 'buffsets'
 
-app.configure 'development', ->
-  app.use express.static __dirname + '/public'
-  app.use express.errorHandler dumpExceptions: true, showStack: true
-
-app.configure 'production', ->
-  oneYear = 31557600000
-  app.use express.static __dirname + '/public', maxAge: oneYear
-  app.use express.errorHandler()
-  arr = process.env.MONGOHQ_URL.split(/:|@|\//)
-  dbUser = arr[3]
-  dbPass = arr[4]
-  dbHost = arr[5]
-  dbPort = arr[6]
-  dbName = arr[7]
-
-
 app.configure ->
   app.set 'views', __dirname + '/views'
   app.set 'view engine', 'jade'
   app.use express.bodyParser()
   app.use express.cookieParser()
-  # app.use express.session secret: "keyboard cat", store: new RedisStore
+
+app.configure 'development', ->
+  app.use express.static __dirname + '/public'
+  app.use express.errorHandler dumpExceptions: true, showStack: true
+  app.use express.session
+    secret: "keyboard cat"
+    store: new RedisStore
+      maxAge: 24 * 60 * 60 * 1000
+
+app.configure 'production', ->
+  oneYear = 31557600000
+  app.use express.static __dirname + '/public', maxAge: oneYear
+  app.use express.errorHandler()
+  arr = (process.env.MONGOHQ_URL||'').split(/:|@|\//)
+  dbUser = arr[3]
+  dbPass = arr[4]
+  dbHost = arr[5]
+  dbPort = arr[6]
+  dbName = arr[7]
+  redisConfig = (process.env.REDISTOGO_URL||'').split(/:|@|\//)
+  app.use express.session
+    secret: "keyboard cat"
+    store: new RedisStore
+      maxAge: 90 * 24 * 60 * 60 * 1000
+      pass: redisConfig[4]
+      host: redisConfig[5]
+      port: redisConfig[6]
 
 
 server = new Server dbHost, dbPort, auto_reconnect: true
@@ -203,25 +214,16 @@ app.post '/users/:id', (request, response, next) ->
         response.redirect 'back'
 
 
+app.get '/cart/add/:item', (req, res) ->
+  req.session.items = req.session.items || []
+  req.session.items.push(req.params.item)
+  res.send 'cart is now ' + '[' + req.session.items.join(',') + ']'
 
 
-# app.post('/add-to-cart', function(req, res){
-#   // Perhaps we posted several items with a form
-#   // (use the bodyParser() middleware for this)
-#   var items = req.body.items;
-#   req.session.items = items;
-#   res.redirect('back');
-# });
-#
-# app.get('/add-to-cart', function(req, res){
-#   // When redirected back to GET /add-to-cart
-#   // we could check req.session.items && req.session.items.length
-#   // to print out a message
-#   if (req.session.items && req.session.items.length) {
-#     req.flash('info', 'You have %s items in your cart', req.session.items.length);
-#   }
-#   res.render('shopping-cart');
-# });
+app.get '/cart', (req, res) ->
+  req.session.items = req.session.items || []
+  if req.session.items && req.session.items.length
+    res.send 'shopping-cart: ' + req.session.items.join(',')
 
 port = process.env.PORT || 4000
 app.listen port, ->
