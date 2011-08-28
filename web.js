@@ -1,5 +1,5 @@
 (function() {
-  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, getLocals, helpers, jade, mongo, openid, port, querystring, relyingParty, server, url, _;
+  var Db, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, getLocals, helpers, jade, mongo, openid, port, querystring, relyingParty, server, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -8,7 +8,14 @@
   jade = require('jade');
   mongo = require('mongodb');
   _ = require('underscore');
-  relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, []);
+  extensions = [
+    new openid.AttributeExchange({
+      "http://axschema.org/contact/email": "required",
+      "http://axschema.org/namePerson/first": "required"
+    })
+  ];
+  console.log(extensions);
+  relyingParty = new openid.RelyingParty('http://dev:4000/verify', null, false, false, extensions);
   Server = mongo.Server;
   Db = mongo.Db;
   app = express.createServer(express.logger());

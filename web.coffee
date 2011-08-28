@@ -6,7 +6,15 @@ querystring = require 'querystring'
 jade = require 'jade'
 mongo = require 'mongodb'
 _ = require 'underscore'
-relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, false, []
+
+extensions = [
+  new openid.AttributeExchange
+    "http://axschema.org/contact/email": "required",
+    "http://axschema.org/namePerson/first": "required",
+]
+
+console.log extensions
+relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, false, extensions
 
 Server = mongo.Server
 Db = mongo.Db
@@ -140,11 +148,12 @@ app.get '/authenticate', (request, response) ->
 
 app.get '/verify', (request, response) ->
   # Verify identity assertion
-  relyingParty.verifyAssertion request, (error, result) ->
-    if !error && result.authenticated
-      response.send result
-    else
-      response.send 'Failure :('
+  relyingParty.verifyAssertion request,
+    (error, result) ->
+      if !error && result.authenticated
+        response.send result
+      else
+        response.send 'Failure :('
 
 
 app.get '/users', (request, response, next) ->
