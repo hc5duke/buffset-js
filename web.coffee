@@ -156,16 +156,19 @@ app.get '/authenticate', (request, response) ->
     else if !authUrl
       response.send 'Authentication failed'
     else
-      console.log authUrl
       response.writeHead 302, Location: authUrl
       response.end()
 
 
 app.get '/verify', (request, response) ->
-  # Verify identity assertion
   relyingParty.verifyAssertion request,
     (error, result) ->
       if !error && result.authenticated
+        uid = result.claimedIdentifier
+        name = result.firstname + ' ' + result.lastname
+        email = result.email
+        # basically: user.find_by_service_uid(uid)
+        # then create or log in
         response.send result
       else
         response.send 'Failure :('

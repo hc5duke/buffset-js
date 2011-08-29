@@ -201,7 +201,6 @@
       } else if (!authUrl) {
         return response.send('Authentication failed');
       } else {
-        console.log(authUrl);
         response.writeHead(302, {
           Location: authUrl
         });
@@ -211,7 +210,11 @@
   });
   app.get('/verify', function(request, response) {
     return relyingParty.verifyAssertion(request, function(error, result) {
+      var email, name, uid;
       if (!error && result.authenticated) {
+        uid = result.claimedIdentifier;
+        name = result.firstname + ' ' + result.lastname;
+        email = result.email;
         return response.send(result);
       } else {
         return response.send('Failure :(');
