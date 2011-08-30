@@ -8,6 +8,8 @@ mongo = require 'mongodb'
 redis = require 'connect-redis'
 _ = require 'underscore'
 Pusher = require 'pusher'
+port = process.env.PORT || 4000
+relyingParty = null
 
 pusherConfig = (process.env.PUSHER_URL||'').split(/:|@|\//)
 pusher = new Pusher
@@ -25,8 +27,6 @@ extensions = [
     "http://axschema.org/namePerson/first": "required"
     "http://axschema.org/namePerson/last": "required"
 ]
-
-relyingParty = new openid.RelyingParty 'http://dev:4000/verify', null, false, false, extensions
 
 Server = mongo.Server
 Db = mongo.Db
@@ -51,6 +51,7 @@ app.configure 'development', ->
     secret: "keyboard cat"
     store: new RedisStore
       maxAge: 24 * 60 * 60 * 1000
+  relyingParty = new openid.RelyingParty 'http://dev:'+port+'/verify', null, false, false, extensions
 
 app.configure 'production', ->
   oneYear = 31557600000
@@ -70,7 +71,7 @@ app.configure 'production', ->
       pass: redisConfig[4]
       host: redisConfig[5]
       port: redisConfig[6]
-
+  relyingParty = new openid.RelyingParty 'http://buffsets.tapjoy.com:'+port+'/verify', null, false, false, extensions
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
@@ -184,6 +185,5 @@ app.get '/cart', (req, res) ->
     res.send 'shopping-cart: ' + req.session.items.join(',')
 
 
-port = process.env.PORT || 4000
 app.listen port, ->
   console.log "Listening on " + port
