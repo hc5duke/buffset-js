@@ -78,7 +78,7 @@
         port: redisConfig[6]
       })
     }));
-    return relyingParty = new openid.RelyingParty('http://buffsets.tapjoy.com:' + port + '/verify', null, false, false, extensions);
+    return relyingParty = new openid.RelyingParty('https://buffsets.tapjoy.com:' + port + '/verify', null, false, false, extensions);
   });
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
@@ -109,17 +109,23 @@
     });
   };
   app.get('/', function(request, response, next) {
-    var locals;
-    locals = getLocals({
-      title: 'Tapjoy Buffsets.js'
-    });
-    return jade.renderFile('views/index.jade', {
-      locals: locals
-    }, function(error, html) {
+    return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
+      var locals;
       if (error) {
         next(error);
       }
-      return response.send(html);
+      locals = getLocals({
+        title: 'Tapjoy Buffsets.js',
+        currentUser: currentUser
+      });
+      return jade.renderFile('views/index.jade', {
+        locals: locals
+      }, function(error, html) {
+        if (error) {
+          next(error);
+        }
+        return response.send(html);
+      });
     });
   });
   app.get('/authenticate', function(request, response) {
@@ -138,66 +144,110 @@
       }
     });
   });
-  app.get('/verify', function(request, response) {
+  app.get('/verify', function(request, response, next) {
     return relyingParty.verifyAssertion(request, function(error, result) {
-      var email, name, uid;
-      if (!error && result.authenticated) {
-        uid = result.claimedIdentifier;
-        name = result.firstname + ' ' + result.lastname;
-        email = result.email;
-        return response.send(result);
-      } else {
-        return response.send('Failure :(');
+      if (error || !result.authenticated) {
+        response.send('Failure :(');
+        return;
       }
-    });
-  });
-  app.get('/users', function(request, response, next) {
-    return db.collection('users', function(err, collection) {
-      return collection.find({
-        active: true
-      }).toArray(function(err, users) {
-        var locals;
-        if (err) {
-          next(err);
-        }
-        locals = getLocals({
-          title: 'Tapjoy Buffsets.js - Users',
-          users: users,
-          current_user: users[0]
-        });
-        return jade.renderFile('views/users/index.jade', {
-          locals: locals
-        }, function(error, html) {
-          if (error) {
-            next(error);
+      return db.collection('users', function(err, users) {
+        var service, user;
+        service = helpers.newService(result);
+        return user = users.findOne({
+          'services.uid': service.uid
+        }, function(err, user) {
+          if (user) {
+            helpers.logIn(user, request.session);
+            return response.redirect('/users/' + user._id);
+          } else {
+            return users.findOne({
+              email: result.email
+            }, function(err, user) {
+              if (err) {
+                next(err);
+              }
+              if (user) {
+                if (!user.services) {
+                  user.services = [];
+                }
+                user.services.push(service);
+                users.update({
+                  _id: user._id
+                }, {
+                  $push: {
+                    services: service
+                  }
+                }, false, false);
+                return response.redirect('/users/' + user._id);
+              } else {
+                user = helpers.newUser(result);
+                users.insert(user);
+                return response.send("new user created");
+              }
+            });
           }
-          return response.send(html);
         });
       });
     });
   });
-  app.get('/users/:id', function(request, response, next) {
-    return db.collection('users', function(err, collection) {
-      return collection.find({
-        _id: new db.bson_serializer.ObjectID(request.params.id)
-      }).toArray(function(err, users) {
-        var locals;
-        if (err) {
-          next(err);
-        }
-        locals = getLocals({
-          title: 'Tapjoy Buffsets.js - User ' + users[0].name,
-          user: users[0],
-          users: users,
-          current_user: users[0]
-        });
-        return jade.renderFile('views/users/show.jade', {
-          locals: locals
-        }, function(error, html) {
+  app.get('/users', function(request, response, next) {
+    return db.collection('users', function(error, users) {
+      return users.find({
+        active: true
+      }).toArray(function(error, users) {
+        return next(error)(error ? helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
+          var locals;
           if (error) {
             next(error);
           }
-          return response.send(html);
+          locals = getLocals({
+            title: 'Tapjoy Buffsets.js - Users',
+            users: users,
+            currentUser: currentUser
+          });
+          return jade.renderFile('views/users/index.jade', {
+            locals: locals
+          }, function(error, html) {
+            if (error) {
+              next(error);
+            }
+            return response.send(html);
+          });
+        }) : void 0);
+      });
+    });
+  });
+  app.get('/users/:id', function(request, response, next) {
+    return db.collection('users', function(error, users) {
+      var id;
+      if (error) {
+        next(error);
+      }
+      id = new db.bson_serializer.ObjectID(request.params.id);
+      return users.findOne({
+        _id: id
+      }, function(error, user) {
+        if (error) {
+          next(error);
+        }
+        return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
+          var locals;
+          if (error) {
+            next(error);
+          }
+          locals = getLocals({
+            title: 'Tapjoy Buffsets.js - User ' + user.name,
+            user: user,
+            currentUser: currentUser
+          });
+          return jade.renderFile('views/users/show.jade', {
+            locals: locals
+          }, function(error, html) {
+            if (error) {
+              next(error);
+            }
+            return response.send(html);
+          });
         });
       });
     });
@@ -207,8 +257,8 @@
     user = {
       pushup_set_count: request.body.user.pushup_set_count
     };
-    return db.collection('users', function(err, collection) {
-      return collection.update({}, {
+    return db.collection('users', function(err, users) {
+      return users.update({}, {
         $set: user
       }, {}, function(err) {
         return response.redirect('back');

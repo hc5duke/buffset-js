@@ -71,7 +71,7 @@ app.configure 'production', ->
       pass: redisConfig[4]
       host: redisConfig[5]
       port: redisConfig[6]
-  relyingParty = new openid.RelyingParty 'http://buffsets.tapjoy.com:'+port+'/verify', null, false, false, extensions
+  relyingParty = new openid.RelyingParty 'https://buffsets.tapjoy.com:'+port+'/verify', null, false, false, extensions
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
@@ -95,12 +95,16 @@ getLocals = (more) ->
 
 
 app.get '/', (request, response, next) ->
-  locals = getLocals title: 'Tapjoy Buffsets.js'
-  jade.renderFile 'views/index.jade'
-    , locals: locals
-    , (error, html) ->
-      next error if error
-      response.send html
+  helpers.usingCurrentUser request.session, db, (error, currentUser) ->
+    next(error) if error
+    locals = getLocals
+      title: 'Tapjoy Buffsets.js'
+      currentUser: currentUser
+    jade.renderFile 'views/index.jade'
+      , locals: locals
+      , (error, html) ->
+        next error if error
+        response.send html
 
 
 app.get '/authenticate', (request, response) ->
@@ -116,57 +120,77 @@ app.get '/authenticate', (request, response) ->
       response.end()
 
 
-app.get '/verify', (request, response) ->
+app.get '/verify', (request, response, next) ->
   relyingParty.verifyAssertion request,
     (error, result) ->
-      if !error && result.authenticated
-        uid = result.claimedIdentifier
-        name = result.firstname + ' ' + result.lastname
-        email = result.email
-        # basically: user.find_by_service_uid(uid)
-        # then create or log in
-        response.send result
-      else
+      if error || !result.authenticated
         response.send 'Failure :('
+        return
+      db.collection 'users', (err, users) ->
+        # 1: is there uid?
+        # user.find_by_service_uid(uid)
+        service = helpers.newService result
+        user = users.findOne 'services.uid': service.uid, (err, user) ->
+          if user
+            # log in user
+            helpers.logIn(user, request.session)
+            response.redirect '/users/' + user._id
+          else
+            # 2: is there email?
+            users.findOne email: result.email, (err, user) ->
+              next(err) if err
+              if user
+                user.services = [] if !user.services
+                user.services.push service
+                users.update({_id: user._id}, {$push: {services: service}}, false, false)
+                response.redirect '/users/' + user._id
+              else
+                # 3: create user
+                user = helpers.newUser result
+                users.insert(user)
+                response.send "new user created"
 
 
 app.get '/users', (request, response, next) ->
-  db.collection 'users', (err, collection) ->
-    collection.find( active: true ).toArray (err, users) ->
-      next(err) if err
-      locals = getLocals
-        title: 'Tapjoy Buffsets.js - Users'
-        , users: users
-        , current_user: users[0]
-      jade.renderFile 'views/users/index.jade'
-        , locals: locals
-        , (error, html) ->
-          if error
-            next error
-          response.send html
+  db.collection 'users', (error, users) ->
+    users.find( active: true ).toArray (error, users) ->
+      next(error) if error
+        helpers.usingCurrentUser request.session, db, (error, currentUser) ->
+          next(error) if error
+          locals = getLocals
+            title: 'Tapjoy Buffsets.js - Users'
+            , users: users
+            , currentUser: currentUser
+          jade.renderFile 'views/users/index.jade'
+            , locals: locals
+            , (error, html) ->
+              next error if error
+              response.send html
 
 
 app.get '/users/:id', (request, response, next) ->
-  db.collection 'users', (err, collection) ->
-    collection.find( _id:  new db.bson_serializer.ObjectID(request.params.id) ).toArray (err, users) ->
-      next(err) if err
-      locals = getLocals
-        title: 'Tapjoy Buffsets.js - User ' + users[0].name
-        , user: users[0]
-        , users: users
-        , current_user: users[0]
-      jade.renderFile 'views/users/show.jade'
-        , locals: locals
-        , (error, html) ->
-          if error
-            next error
-          response.send html
+  db.collection 'users', (error, users) ->
+    next(error) if error
+    id = new db.bson_serializer.ObjectID(request.params.id)
+    users.findOne _id: id, (error, user) ->
+      next(error) if error
+      helpers.usingCurrentUser request.session, db, (error, currentUser) ->
+        next(error) if error
+        locals = getLocals
+          title: 'Tapjoy Buffsets.js - User ' + user.name
+          , user: user
+          , currentUser: currentUser
+        jade.renderFile 'views/users/show.jade'
+          , locals: locals
+          , (error, html) ->
+            next error if error
+            response.send html
 
 
 app.post '/users/:id', (request, response, next) ->
   user = pushup_set_count: request.body.user.pushup_set_count
-  db.collection 'users', (err, collection) ->
-    collection.update {}
+  db.collection 'users', (err, users) ->
+    users.update {}
       , $set : user
       , { }
       , (err) ->

@@ -51,8 +51,50 @@ tallyize = (number) ->
     str.join('').trim()
   else
     "0"
+newService = (result) ->
+  provider: 'google'
+  uemail: result.email
+  uid: result.claimedIdentifier
+  uname: [result.firstname, result.lastname].join ' '
+
+newUser = (result) ->
+  service = newService result
+  name = [result.firstname, result.lastname]
+  handle = name.join('').slice 0, 5
+  email = result.email
+  service = newService result
+  user =
+    active: false
+    admin: false
+    email: email
+    handle: handle
+    multiplier: 20
+    name: name.join ' '
+    pushup_set_count: 0
+    services:
+      service
+
+usingCurrentUser = (session, db, callback) ->
+  db.collection 'users', (error, users) ->
+    console.log session.userId
+    id = new db.bson_serializer.ObjectID(session.userId)
+    users.findOne _id: id, (error, currentUser) ->
+      console.log currentUser
+      callback error, currentUser||''
+
+logIn = (user, session) ->
+  session.userId = user._id
+  console.log 'user id = ' + session.userId
+
+logOut = (session) ->
+  session.userId = null
 
 module.exports =
   fives: fives
   romanize: romanize
   tallyize: tallyize
+  newService: newService
+  newUser: newUser
+  usingCurrentUser: usingCurrentUser
+  logIn: logIn
+  logOut: logOut
