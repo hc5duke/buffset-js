@@ -10,6 +10,7 @@
   redis = require('connect-redis');
   _ = require('underscore');
   Pusher = require('pusher');
+  helpers = require('./lib/helpers');
   port = process.env.PORT || 4000;
   relyingParty = null;
   pusherConfig = (process.env.PUSHER_URL || '').split(/:|@|\//);
@@ -18,7 +19,6 @@
     appKey: pusherConfig[3],
     secret: pusherConfig[4]
   });
-  helpers = require('./lib/helpers');
   extensions = [
     new openid.AttributeExchange({
       "http://axschema.org/contact/email": "required",
@@ -166,7 +166,7 @@
         }, function(err, user) {
           if (user) {
             helpers.logIn(user, request.session);
-            return response.redirect('/users/' + user._id);
+            return response.redirect('/users/');
           } else {
             return users.findOne({
               email: result.email

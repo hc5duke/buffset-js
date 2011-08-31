@@ -8,6 +8,7 @@ mongo = require 'mongodb'
 redis = require 'connect-redis'
 _ = require 'underscore'
 Pusher = require 'pusher'
+helpers = require './lib/helpers'
 port = process.env.PORT || 4000
 relyingParty = null
 
@@ -17,9 +18,6 @@ pusher = new Pusher
   appKey: pusherConfig[3]
   secret: pusherConfig[4]
 # channel = pusher.channel 'test_channel'
-
-
-helpers = require './lib/helpers'
 
 extensions = [
   new openid.AttributeExchange
@@ -137,13 +135,12 @@ app.get '/verify', (request, response, next) ->
         return
       db.collection 'users', (err, users) ->
         # 1: is there uid?
-        # user.find_by_service_uid(uid)
         service = helpers.newService result
         user = users.findOne 'services.uid': service.uid, (err, user) ->
           if user
             # log in user
             helpers.logIn user, request.session
-            response.redirect '/users/' + user._id
+            response.redirect '/users/'
           else
             # 2: is there email?
             users.findOne email: result.email, (err, user) ->
