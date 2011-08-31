@@ -1,5 +1,5 @@
 (function() {
-  var Db, Pusher, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, _;
+  var Db, Pusher, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withUserData, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -100,29 +100,49 @@
       return console.log(err);
     }
   });
+  withUserData = function(users, callback) {
+    return users.count({
+      active: true
+    }, function(error, activeUsersCount) {
+      if (!error) {
+        return users.count({}, function(error, usersCount) {
+          if (!error) {
+            return callback(null, {
+              activeUsersCount: activeUsersCount,
+              usersCount: usersCount
+            });
+          } else {
+            return callback(error);
+          }
+        });
+      } else {
+        return callback(error);
+      }
+    });
+  };
   renderWithLocals = function(locals, view, callback) {
     return db.collection('users', function(error, users) {
-      return users.count({
-        active: true
-      }, function(error, activeUsersCount) {
-        return users.count({}, function(error, usersCount) {
+      return withUserData(users, function(error, userData) {
+        if (!error) {
           locals = _.extend(locals, {
-            active_users_count: activeUsersCount,
-            users_count: usersCount,
+            active_users_count: userData.activeUsersCount,
+            users_count: userData.usersCount,
             helpers: helpers
           });
           view = 'views/' + view + '.jade';
           return jade.renderFile(view, {
             locals: locals
           }, callback);
-        });
+        } else {
+          return callback(error);
+        }
       });
     });
   };
   app.get('/', function(request, response, next) {
     return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
       var locals;
-      if (!currentUser) {
+      if (currentUser) {
         return response.redirect('/users/');
       } else {
         if (error) {
@@ -220,14 +240,12 @@
           if (error) {
             next(error);
           }
-          locals = getLocals({
+          locals = {
             title: 'Tapjoy Buffsets.js - Users',
             users: users,
             currentUser: currentUser
-          });
-          return jade.renderFile('views/users/index.jade', {
-            locals: locals
-          }, function(error, html) {
+          };
+          return renderWithLocals(locals, 'users/index', function(error, html) {
             if (error) {
               next(error);
             }
@@ -255,14 +273,12 @@
           if (error) {
             next(error);
           }
-          locals = getLocals({
+          locals = {
             title: 'Tapjoy Buffsets.js - User ' + user.name,
             user: user,
             currentUser: currentUser
-          });
-          return jade.renderFile('views/users/show.jade', {
-            locals: locals
-          }, function(error, html) {
+          };
+          return renderWithLocals(locals, 'users/show', function(error, html) {
             if (error) {
               next(error);
             }

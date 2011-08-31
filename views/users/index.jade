@@ -12,10 +12,7 @@ html
             - user_id = (user == currentUser) ? 'currentUser' : "user_#{user.id}"
             .user(id = user_id)
               .handle
-                - if (currentUser && currentUser.admin)
-                  a(href = 'edit_user')= user.handle
-                - else
-                  a(href = 'show_user')= user.handle
+                a(href = '/users/' + user._id)= user.handle
               - if (user == currentUser)
                 .count#edit_currentUser
                   a(href = '#')= helpers.tallyize(user.pushup_set_count)

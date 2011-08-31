@@ -85,16 +85,31 @@ db.open (err, db) ->
   else
     console.log err
 
+withUserData = (users, callback) ->
+  users.count {active: true}, (error, activeUsersCount) ->
+    if !error
+      users.count {}, (error, usersCount) ->
+        if !error
+          callback null,
+            activeUsersCount: activeUsersCount
+            usersCount: usersCount
+        else
+          callback error
+    else
+      callback error
+
 renderWithLocals = (locals, view, callback) ->
   db.collection 'users', (error, users) ->
-    users.count {active: true}, (error, activeUsersCount) ->
-      users.count {}, (error, usersCount) ->
+    withUserData users, (error, userData) ->
+      if !error
         locals = _.extend locals,
-          active_users_count: activeUsersCount
-          users_count: usersCount
+          active_users_count: userData.activeUsersCount
+          users_count: userData.usersCount
           helpers: helpers
         view = 'views/' + view + '.jade'
         jade.renderFile view, {locals: locals}, callback
+      else
+        callback(error)
 
 
 app.get '/', (request, response, next) ->
@@ -102,7 +117,7 @@ app.get '/', (request, response, next) ->
     if currentUser
       response.redirect '/users/'
     else
-      next(error) if error
+      next error if error
       locals =
         title: 'Tapjoy Buffsets.js'
         currentUser: currentUser
@@ -118,7 +133,6 @@ app.get '/services/signout', (request, response, next) ->
 
 app.get '/authenticate', (request, response) ->
   identifier = 'https://www.google.com/accounts/o8/id'
-
   relyingParty.authenticate identifier, false, (error, authUrl) ->
     if error
       response.send 'Authentication failed: ' + error
@@ -164,35 +178,31 @@ app.get '/users', (request, response, next) ->
     users.find( active: true ).toArray (error, users) ->
       next(error) if error
       helpers.usingCurrentUser request.session, db, (error, currentUser) ->
-        next(error) if error
-        locals = getLocals
+        next error if error
+        locals =
           title: 'Tapjoy Buffsets.js - Users'
           users: users
           currentUser: currentUser
-        jade.renderFile 'views/users/index.jade'
-          locals: locals
-          (error, html) ->
-            next error if error
-            response.send html
+        renderWithLocals locals, 'users/index', (error, html) ->
+          next error if error
+          response.send html
 
 
 app.get '/users/:id', (request, response, next) ->
   db.collection 'users', (error, users) ->
-    next(error) if error
+    next error if error
     id = new db.bson_serializer.ObjectID(request.params.id)
     users.findOne _id: id, (error, user) ->
-      next(error) if error
+      next error if error
       helpers.usingCurrentUser request.session, db, (error, currentUser) ->
-        next(error) if error
-        locals = getLocals
+        next error if error
+        locals =
           title: 'Tapjoy Buffsets.js - User ' + user.name
           user: user
           currentUser: currentUser
-        jade.renderFile 'views/users/show.jade'
-          locals: locals
-          (error, html) ->
-            next error if error
-            response.send html
+        renderWithLocals locals, 'users/show', (error, html) ->
+          next error if error
+          response.send html
 
 
 app.listen port, ->
