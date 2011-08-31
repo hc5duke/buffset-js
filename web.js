@@ -160,6 +160,9 @@
       });
     });
   };
+  authorizedToEdit = function(currentUser, request, adminOnly) {
+    return currentUser.admin || (!adminOnly && request.params.id === currentUser._id);
+  };
   app.get('/', function(request, response, next) {
     return withCurrentUser(request.session, function(error, currentUser) {
       var locals;
@@ -294,9 +297,6 @@
       });
     });
   });
-  authorizedToEdit = function(currentUser, request) {
-    return currentUser.admin || request.params.id === currentUser._id;
-  };
   app.get('/users/:id/edit', function(request, response, next) {
     return withCurrentUser(request.session, function(error, currentUser) {
       if (error) {
@@ -368,6 +368,41 @@
         });
       } else {
         return response.redirect('/users/' + request.params.id);
+      }
+    });
+  });
+  app.get('/admin/users', function(request, response, next) {
+    return withCurrentUser(request.session, function(error, currentUser) {
+      if (error) {
+        next(error);
+      }
+      if (authorizedToEdit(currentUser, request)) {
+        return db.collection('users', function(error, users) {
+          return users.find({
+            $not: {
+              active: true
+            }
+          }).toArray(function(error, inactiveUsers) {
+            if (error) {
+              next(error);
+            }
+            return users.find({
+              active: true
+            }).toArray(function(error, activeUsers) {
+              var locals;
+              if (error) {
+                next(error);
+              }
+              locals = {
+                title: 'Users',
+                activeUsers: activeUsers,
+                inactiveUsers: inactiveUsers,
+                currentUser: currentUser
+              };
+              return renderWithLocals(locals, 'admin/users/index', next, response);
+            });
+          });
+        });
       }
     });
   });

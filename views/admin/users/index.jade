@@ -1,0 +1,19 @@
+mixin userForm(user)
+  form()
+    input(type="hidden", name="user[active]", value="0")
+    input(type="checkbox", name="user[active]", value="1", checked=user.active)
+    input(type="text", size="30", name="user[name]", value=user.name)
+    input(type="text", size="30", name="user[handle]", value=user.handle)
+    input(type="text", size="30", name="user[pushup_set_count]", value=user.pushup_set_count, type='number')
+    input(type="submit", value="Update")
+
+!!! 5
+html
+  body
+    h1 Active (#{activeUsers.length})
+    - each user in activeUsers
+      mixin userForm(user)
+
+    h1 Inactive (#{inactiveUsers.length})
+    - each user in inactiveUsers
+      mixin userForm(user)

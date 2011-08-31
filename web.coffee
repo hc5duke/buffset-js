@@ -125,6 +125,9 @@ renderWithLocals = (locals, view, next, response) ->
       else
         next(error)
 
+authorizedToEdit = (currentUser, request, adminOnly) ->
+  currentUser.admin || (!adminOnly && request.params.id == currentUser._id)
+
 
 app.get '/', (request, response, next) ->
   withCurrentUser request.session, (error, currentUser) ->
@@ -204,9 +207,6 @@ app.get '/users/:id', (request, response, next) ->
         locals = title: 'User ' + user.name, user: user, currentUser: currentUser
         renderWithLocals locals, 'users/show', next, response
 
-authorizedToEdit = (currentUser, request) ->
-  currentUser.admin || request.params.id == currentUser._id
-
 app.get '/users/:id/edit', (request, response, next) ->
   withCurrentUser request.session, (error, currentUser) ->
     next error if error
@@ -239,6 +239,20 @@ app.post '/users/:id', (request, response, next) ->
           response.redirect 'back'
     else
       response.redirect '/users/' + request.params.id
+
+
+app.get '/admin/users', (request, response, next) ->
+  withCurrentUser request.session, (error, currentUser) ->
+    next error if error
+    if authorizedToEdit(currentUser, request)
+      db.collection 'users', (error, users) ->
+        users.find({ $not: {active: true} }).toArray (error, inactiveUsers) ->
+          next(error) if error
+          users.find({active: true}).toArray (error, activeUsers) ->
+            next(error) if error
+            locals = title: 'Users', activeUsers: activeUsers, inactiveUsers: inactiveUsers, currentUser: currentUser
+            renderWithLocals locals, 'admin/users/index', next, response
+
 
 app.listen port, ->
   console.log "Listening on " + port
