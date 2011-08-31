@@ -85,12 +85,16 @@ db.open (err, db) ->
   else
     console.log err
 
-getLocals = (more) ->
-  _.extend more,
-    active_users_count: 2
-    users_count: 3
-    admin: true
-    helpers: helpers
+renderWithLocals = (locals, view, callback) ->
+  db.collection 'users', (error, users) ->
+    users.count {active: true}, (error, activeUsersCount) ->
+      users.count {}, (error, usersCount) ->
+        locals = _.extend locals,
+          active_users_count: activeUsersCount
+          users_count: usersCount
+          helpers: helpers
+        view = 'views/' + view + '.jade'
+        jade.renderFile view, {locals: locals}, callback
 
 
 app.get '/', (request, response, next) ->
@@ -99,14 +103,12 @@ app.get '/', (request, response, next) ->
       response.redirect '/users/'
     else
       next(error) if error
-      locals = getLocals
+      locals =
         title: 'Tapjoy Buffsets.js'
         currentUser: currentUser
-      jade.renderFile 'views/index.jade'
-        locals: locals
-        (error, html) ->
-          next error if error
-          response.send html
+      renderWithLocals locals, 'index', (error, html) ->
+        next error if error
+        response.send html
 
 
 app.get '/services/signout', (request, response, next) ->

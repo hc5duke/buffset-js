@@ -17,7 +17,7 @@
             a(href='/chart/punch') Punch-card
     ul.nav.secondary-nav
       - if (currentUser)
-        - if (admin)
+        - if (currentUser.admin)
           li
             a(href='/admin/users') #{active_users_count} active / #{users_count} total
         li.menu

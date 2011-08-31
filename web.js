@@ -1,5 +1,5 @@
 (function() {
-  var Db, Pusher, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, getLocals, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, server, url, _;
+  var Db, Pusher, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -100,30 +100,39 @@
       return console.log(err);
     }
   });
-  getLocals = function(more) {
-    return _.extend(more, {
-      active_users_count: 2,
-      users_count: 3,
-      admin: true,
-      helpers: helpers
+  renderWithLocals = function(locals, view, callback) {
+    return db.collection('users', function(error, users) {
+      return users.count({
+        active: true
+      }, function(error, activeUsersCount) {
+        return users.count({}, function(error, usersCount) {
+          locals = _.extend(locals, {
+            active_users_count: activeUsersCount,
+            users_count: usersCount,
+            helpers: helpers
+          });
+          view = 'views/' + view + '.jade';
+          return jade.renderFile(view, {
+            locals: locals
+          }, callback);
+        });
+      });
     });
   };
   app.get('/', function(request, response, next) {
     return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
       var locals;
-      if (currentUser) {
+      if (!currentUser) {
         return response.redirect('/users/');
       } else {
         if (error) {
           next(error);
         }
-        locals = getLocals({
+        locals = {
           title: 'Tapjoy Buffsets.js',
           currentUser: currentUser
-        });
-        return jade.renderFile('views/index.jade', {
-          locals: locals
-        }, function(error, html) {
+        };
+        return renderWithLocals(locals, 'index', function(error, html) {
           if (error) {
             next(error);
           }
