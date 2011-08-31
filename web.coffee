@@ -88,23 +88,32 @@ db.open (err, db) ->
     console.log err
 
 getLocals = (more) ->
-  _.extend more, active_users_count: 2
-    , users_count: 3
-    , admin: true
-    , helpers: helpers
+  _.extend more,
+    active_users_count: 2
+    users_count: 3
+    admin: true
+    helpers: helpers
 
 
 app.get '/', (request, response, next) ->
   helpers.usingCurrentUser request.session, db, (error, currentUser) ->
-    next(error) if error
-    locals = getLocals
-      title: 'Tapjoy Buffsets.js'
-      currentUser: currentUser
-    jade.renderFile 'views/index.jade'
-      , locals: locals
-      , (error, html) ->
-        next error if error
-        response.send html
+    if currentUser
+      response.redirect '/users/'
+    else
+      next(error) if error
+      locals = getLocals
+        title: 'Tapjoy Buffsets.js'
+        currentUser: currentUser
+      jade.renderFile 'views/index.jade'
+        locals: locals
+        (error, html) ->
+          next error if error
+          response.send html
+
+
+app.get '/services/signout', (request, response, next) ->
+  helpers.logOut(request.session)
+  response.redirect '/'
 
 
 app.get '/authenticate', (request, response) ->
@@ -133,7 +142,7 @@ app.get '/verify', (request, response, next) ->
         user = users.findOne 'services.uid': service.uid, (err, user) ->
           if user
             # log in user
-            helpers.logIn(user, request.session)
+            helpers.logIn user, request.session
             response.redirect '/users/' + user._id
           else
             # 2: is there email?
@@ -155,17 +164,17 @@ app.get '/users', (request, response, next) ->
   db.collection 'users', (error, users) ->
     users.find( active: true ).toArray (error, users) ->
       next(error) if error
-        helpers.usingCurrentUser request.session, db, (error, currentUser) ->
-          next(error) if error
-          locals = getLocals
-            title: 'Tapjoy Buffsets.js - Users'
-            , users: users
-            , currentUser: currentUser
-          jade.renderFile 'views/users/index.jade'
-            , locals: locals
-            , (error, html) ->
-              next error if error
-              response.send html
+      helpers.usingCurrentUser request.session, db, (error, currentUser) ->
+        next(error) if error
+        locals = getLocals
+          title: 'Tapjoy Buffsets.js - Users'
+          users: users
+          currentUser: currentUser
+        jade.renderFile 'views/users/index.jade'
+          locals: locals
+          (error, html) ->
+            next error if error
+            response.send html
 
 
 app.get '/users/:id', (request, response, next) ->
@@ -178,11 +187,11 @@ app.get '/users/:id', (request, response, next) ->
         next(error) if error
         locals = getLocals
           title: 'Tapjoy Buffsets.js - User ' + user.name
-          , user: user
-          , currentUser: currentUser
+          user: user
+          currentUser: currentUser
         jade.renderFile 'views/users/show.jade'
-          , locals: locals
-          , (error, html) ->
+          locals: locals
+          (error, html) ->
             next error if error
             response.send html
 
@@ -191,9 +200,9 @@ app.post '/users/:id', (request, response, next) ->
   user = pushup_set_count: request.body.user.pushup_set_count
   db.collection 'users', (err, users) ->
     users.update {}
-      , $set : user
-      , { }
-      , (err) ->
+      $set : user
+      { }
+      (err) ->
         response.redirect 'back'
 
 

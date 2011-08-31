@@ -111,22 +111,30 @@
   app.get('/', function(request, response, next) {
     return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
       var locals;
-      if (error) {
-        next(error);
-      }
-      locals = getLocals({
-        title: 'Tapjoy Buffsets.js',
-        currentUser: currentUser
-      });
-      return jade.renderFile('views/index.jade', {
-        locals: locals
-      }, function(error, html) {
+      if (currentUser) {
+        return response.redirect('/users/');
+      } else {
         if (error) {
           next(error);
         }
-        return response.send(html);
-      });
+        locals = getLocals({
+          title: 'Tapjoy Buffsets.js',
+          currentUser: currentUser
+        });
+        return jade.renderFile('views/index.jade', {
+          locals: locals
+        }, function(error, html) {
+          if (error) {
+            next(error);
+          }
+          return response.send(html);
+        });
+      }
     });
+  });
+  app.get('/services/signout', function(request, response, next) {
+    helpers.logOut(request.session);
+    return response.redirect('/');
   });
   app.get('/authenticate', function(request, response) {
     var identifier;
@@ -195,7 +203,10 @@
       return users.find({
         active: true
       }).toArray(function(error, users) {
-        return next(error)(error ? helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
+        if (error) {
+          next(error);
+        }
+        return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
           var locals;
           if (error) {
             next(error);
@@ -213,7 +224,7 @@
             }
             return response.send(html);
           });
-        }) : void 0);
+        });
       });
     });
   });

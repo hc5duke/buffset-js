@@ -76,15 +76,12 @@ newUser = (result) ->
 
 usingCurrentUser = (session, db, callback) ->
   db.collection 'users', (error, users) ->
-    console.log session.userId
     id = new db.bson_serializer.ObjectID(session.userId)
     users.findOne _id: id, (error, currentUser) ->
-      console.log currentUser
       callback error, currentUser||''
 
 logIn = (user, session) ->
   session.userId = user._id
-  console.log 'user id = ' + session.userId
 
 logOut = (session) ->
   session.userId = null
