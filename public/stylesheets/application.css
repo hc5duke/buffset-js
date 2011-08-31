@@ -75,3 +75,8 @@ input {
 .hidden {
   display: none;
 }
+#nodejs {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
