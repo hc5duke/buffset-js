@@ -85,8 +85,8 @@ db.open (err, db) ->
   else
     console.log err
 
-withCurrentUser = (db, userId, callback) ->
-  id = new db.bson_serializer.ObjectID(userId)
+withCurrentUser = (session, callback) ->
+  id = new db.bson_serializer.ObjectID(session.userId)
   db.collection 'users', (error, users) ->
     if error
       callback error
@@ -95,6 +95,7 @@ withCurrentUser = (db, userId, callback) ->
         callback error, currentUser || false
 
 withUserData = (users, callback) ->
+  # TODO: move these to memcached
   users.count {active: true}, (error, activeUsersCount) ->
     if !error
       users.count {}, (error, usersCount) ->
@@ -122,7 +123,7 @@ renderWithLocals = (locals, view, callback) ->
 
 
 app.get '/', (request, response, next) ->
-  withCurrentUser db, request.session.userId, (error, currentUser) ->
+  withCurrentUser request.session, (error, currentUser) ->
     if currentUser
       response.redirect '/users/'
     else
@@ -186,7 +187,7 @@ app.get '/users', (request, response, next) ->
   db.collection 'users', (error, users) ->
     users.find( active: true ).toArray (error, users) ->
       next(error) if error
-      withCurrentUser db, request.session.userId, (error, currentUser) ->
+      withCurrentUser request.session, (error, currentUser) ->
         next error if error
         locals =
           title: 'Tapjoy Buffsets.js - Users'
@@ -203,7 +204,7 @@ app.get '/users/:id', (request, response, next) ->
     id = new db.bson_serializer.ObjectID(request.params.id)
     users.findOne _id: id, (error, user) ->
       next error if error
-      withCurrentUser db, request.session.userId, (error, currentUser) ->
+      withCurrentUser request.session, (error, currentUser) ->
         next error if error
         locals =
           title: 'Tapjoy Buffsets.js - User ' + user.name
@@ -213,23 +214,30 @@ app.get '/users/:id', (request, response, next) ->
           next error if error
           response.send html
 
+authorizedToEdit = (currentUser, request) ->
+  currentUser.admin || request.params.id == currentUser._id
 
 app.get '/users/:id/edit', (request, response, next) ->
-  db.collection 'users', (error, users) ->
+  withCurrentUser request.session, (error, currentUser) ->
     next error if error
-    id = new db.bson_serializer.ObjectID(request.params.id)
-    users.findOne _id: id, (error, user) ->
-      next error if error
-      withCurrentUser db, request.session.userId, (error, currentUser) ->
+    if authorizedToEdit(currentUser, request)
+      db.collection 'users', (error, users) ->
         next error if error
-        locals =
-          title: 'Tapjoy Buffsets.js - User ' + user.name
-          user: user
-          currentUser: currentUser
-        renderWithLocals locals, 'users/show', (error, html) ->
+        id = new db.bson_serializer.ObjectID(request.params.id)
+        users.findOne _id: id, (error, user) ->
           next error if error
-          response.send html
+          locals =
+            title: 'Tapjoy Buffsets.js - User ' + user.name
+            user: user
+            currentUser: currentUser
+          renderWithLocals locals, 'users/edit', (error, html) ->
+            next error if error
+            response.send html
+    else
+      response.redirect '/users/' + request.params.id
 
+# TODO
+# app.post '/users/:id'
 
 app.listen port, ->
   console.log "Listening on " + port

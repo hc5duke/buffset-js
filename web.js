@@ -1,5 +1,5 @@
 (function() {
-  var Db, Pusher, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withCurrentUser, withUserData, _;
+  var Db, Pusher, RedisStore, Server, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withCurrentUser, withUserData, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -100,9 +100,9 @@
       return console.log(err);
     }
   });
-  withCurrentUser = function(db, userId, callback) {
+  withCurrentUser = function(session, callback) {
     var id;
-    id = new db.bson_serializer.ObjectID(userId);
+    id = new db.bson_serializer.ObjectID(session.userId);
     return db.collection('users', function(error, users) {
       if (error) {
         return callback(error);
@@ -155,7 +155,7 @@
     });
   };
   app.get('/', function(request, response, next) {
-    return withCurrentUser(db, request.session.userId, function(error, currentUser) {
+    return withCurrentUser(request.session, function(error, currentUser) {
       var locals;
       if (currentUser) {
         return response.redirect('/users/');
@@ -250,7 +250,7 @@
         if (error) {
           next(error);
         }
-        return withCurrentUser(db, request.session.userId, function(error, currentUser) {
+        return withCurrentUser(request.session, function(error, currentUser) {
           var locals;
           if (error) {
             next(error);
@@ -283,7 +283,7 @@
         if (error) {
           next(error);
         }
-        return withCurrentUser(db, request.session.userId, function(error, currentUser) {
+        return withCurrentUser(request.session, function(error, currentUser) {
           var locals;
           if (error) {
             next(error);
@@ -303,37 +303,44 @@
       });
     });
   });
+  authorizedToEdit = function(currentUser, request) {
+    return currentUser.admin || request.params.id === currentUser._id;
+  };
   app.get('/users/:id/edit', function(request, response, next) {
-    return db.collection('users', function(error, users) {
-      var id;
+    return withCurrentUser(request.session, function(error, currentUser) {
       if (error) {
         next(error);
       }
-      id = new db.bson_serializer.ObjectID(request.params.id);
-      return users.findOne({
-        _id: id
-      }, function(error, user) {
-        if (error) {
-          next(error);
-        }
-        return withCurrentUser(db, request.session.userId, function(error, currentUser) {
-          var locals;
+      if (authorizedToEdit(currentUser, request)) {
+        return db.collection('users', function(error, users) {
+          var id;
           if (error) {
             next(error);
           }
-          locals = {
-            title: 'Tapjoy Buffsets.js - User ' + user.name,
-            user: user,
-            currentUser: currentUser
-          };
-          return renderWithLocals(locals, 'users/show', function(error, html) {
+          id = new db.bson_serializer.ObjectID(request.params.id);
+          return users.findOne({
+            _id: id
+          }, function(error, user) {
+            var locals;
             if (error) {
               next(error);
             }
-            return response.send(html);
+            locals = {
+              title: 'Tapjoy Buffsets.js - User ' + user.name,
+              user: user,
+              currentUser: currentUser
+            };
+            return renderWithLocals(locals, 'users/edit', function(error, html) {
+              if (error) {
+                next(error);
+              }
+              return response.send(html);
+            });
           });
         });
-      });
+      } else {
+        return response.redirect('/users/' + request.params.id);
+      }
     });
   });
   app.listen(port, function() {

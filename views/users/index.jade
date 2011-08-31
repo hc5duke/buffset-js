@@ -5,16 +5,17 @@ html
     include ../includes/toolbar
     .container#body
       #season-number-outside
-        #season-number 2
+        #season-number 3
       #container
         section#users.text
           - each user in users
-            - user_id = (user == currentUser) ? 'currentUser' : "user_#{user.id}"
+            - myUser = (String(user._id) == String(currentUser._id))
+            - user_id = myUser ? 'current_user' : "user_" + user._id
             .user(id = user_id)
               .handle
                 a(href = '/users/' + user._id)= user.handle
-              - if (user == currentUser)
-                .count#edit_currentUser
+              - if (myUser)
+                .count#edit_current_user
                   a(href = '#')= helpers.tallyize(user.pushup_set_count)
                 .hidden#edit_currentUser_form
                   form.edit_user#edit_user_1(action="/users/#{user._id}", method="post")

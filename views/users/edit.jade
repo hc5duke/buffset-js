@@ -5,9 +5,32 @@ html
     include ../includes/toolbar
     .container#body
       #season-number-outside
-        #season-number 2
+        #season-number 3
       #container
         section#edit-user.text
-          blah
+          form.edit_user(action="/users/" + user._id, method="post")
+            fieldset
+              legend Edit user
+              .clearfix
+                label(value='email') Email
+                input.xlarge(type='email', disabled='disabled', value=user.email)
+              - if (currentUser.admin == true)
+                .clearfix
+                  label(value='active') Active
+                  input.xlarge(type='checkbox', value='1', checked=(user.active ? 'checked' : ''))
+              .clearfix
+                label(value='handle') Handle
+                input.xlarge(type='text', value=user.handle)
+              .clearfix
+                label(value='count') Sets
+                input.xlarge(type='number', min='0', max='3999', value=user.pushups / user.multiplier)
+              .clearfix
+                .row
+                  .span1.columns &nbsp;
+                  .span4.columns
+                    input.btn.large(type='button', value='Cancel', onclick='javascript:history.back();')
+                  .span4.columns
+                    input.btn.large.primary#user_submit(type='submit', value='Update User')
+                  .span3.columns &nbsp;
 
     include ../includes/footer
