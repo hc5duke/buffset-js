@@ -343,6 +343,48 @@
       }
     });
   });
+  app.post('/users/:id', function(request, response, next) {
+    return withCurrentUser(request.session, function(error, currentUser) {
+      var id, userHash, userParams;
+      if (error) {
+        next(error);
+      }
+      if (authorizedToEdit(currentUser, request)) {
+        userParams = request.body.user;
+        userHash = {};
+        if (userParams.pushup_set_count) {
+          userHash.pushup_set_count = userParams.pushup_set_count;
+        }
+        if (userParams.handle) {
+          userHash.handle = userParams.handle;
+        }
+        id = new db.bson_serializer.ObjectID(request.params.id);
+        return db.collection('users', function(error, users) {
+          var options;
+          if (error) {
+            next(error);
+          }
+          options = {
+            safe: true,
+            multi: false,
+            upsert: false
+          };
+          return users.update({
+            _id: id
+          }, {
+            $set: userHash
+          }, options, function(error) {
+            if (error) {
+              next(error);
+            }
+            return response.redirect('back');
+          });
+        });
+      } else {
+        return response.redirect('/users/' + request.params.id);
+      }
+    });
+  });
   app.listen(port, function() {
     return console.log("Listening on " + port);
   });

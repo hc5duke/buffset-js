@@ -17,8 +17,8 @@ html
               - if (myUser)
                 .count#edit_current_user
                   a(href = '#')= helpers.tallyize(user.pushup_set_count)
-                .hidden#edit_currentUser_form
-                  form.edit_user#edit_user_1(action="/users/#{user._id}", method="post")
+                .hidden#edit_current_user_form
+                  form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
                     input#user_pushup_set_count(max="3999", min="0", name="user[pushup_set_count]", size="6", type="number", value="#{user.pushup_set_count}")
                     input#user_submit(name="commit", type="submit", value="save")
                     div

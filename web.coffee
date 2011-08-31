@@ -236,8 +236,24 @@ app.get '/users/:id/edit', (request, response, next) ->
     else
       response.redirect '/users/' + request.params.id
 
-# TODO
-# app.post '/users/:id'
+
+app.post '/users/:id', (request, response, next) ->
+  withCurrentUser request.session, (error, currentUser) ->
+    next error if error
+    if authorizedToEdit(currentUser, request)
+      userParams = request.body.user
+      userHash = {}
+      userHash.pushup_set_count = userParams.pushup_set_count if userParams.pushup_set_count
+      userHash.handle = userParams.handle if userParams.handle
+      id = new db.bson_serializer.ObjectID(request.params.id)
+      db.collection 'users', (error, users) ->
+        next error if error
+        options = safe: true, multi: false, upsert: false
+        users.update {_id: id}, {$set: userHash }, options, (error) ->
+          next error if error
+          response.redirect 'back'
+    else
+      response.redirect '/users/' + request.params.id
 
 app.listen port, ->
   console.log "Listening on " + port
