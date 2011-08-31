@@ -1,5 +1,5 @@
 (function() {
-  var Db, Pusher, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withUserData, _;
+  var Db, Pusher, RedisStore, Server, app, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withCurrentUser, withUserData, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -100,6 +100,21 @@
       return console.log(err);
     }
   });
+  withCurrentUser = function(db, userId, callback) {
+    var id;
+    id = new db.bson_serializer.ObjectID(userId);
+    return db.collection('users', function(error, users) {
+      if (error) {
+        return callback(error);
+      } else {
+        return users.findOne({
+          _id: id
+        }, function(error, currentUser) {
+          return callback(error, currentUser || false);
+        });
+      }
+    });
+  };
   withUserData = function(users, callback) {
     return users.count({
       active: true
@@ -140,7 +155,7 @@
     });
   };
   app.get('/', function(request, response, next) {
-    return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
+    return withCurrentUser(db, request.session.userId, function(error, currentUser) {
       var locals;
       if (currentUser) {
         return response.redirect('/users/');
@@ -235,7 +250,7 @@
         if (error) {
           next(error);
         }
-        return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
+        return withCurrentUser(db, request.session.userId, function(error, currentUser) {
           var locals;
           if (error) {
             next(error);
@@ -268,7 +283,40 @@
         if (error) {
           next(error);
         }
-        return helpers.usingCurrentUser(request.session, db, function(error, currentUser) {
+        return withCurrentUser(db, request.session.userId, function(error, currentUser) {
+          var locals;
+          if (error) {
+            next(error);
+          }
+          locals = {
+            title: 'Tapjoy Buffsets.js - User ' + user.name,
+            user: user,
+            currentUser: currentUser
+          };
+          return renderWithLocals(locals, 'users/show', function(error, html) {
+            if (error) {
+              next(error);
+            }
+            return response.send(html);
+          });
+        });
+      });
+    });
+  });
+  app.get('/users/:id/edit', function(request, response, next) {
+    return db.collection('users', function(error, users) {
+      var id;
+      if (error) {
+        next(error);
+      }
+      id = new db.bson_serializer.ObjectID(request.params.id);
+      return users.findOne({
+        _id: id
+      }, function(error, user) {
+        if (error) {
+          next(error);
+        }
+        return withCurrentUser(db, request.session.userId, function(error, currentUser) {
           var locals;
           if (error) {
             next(error);

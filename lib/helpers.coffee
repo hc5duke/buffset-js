@@ -74,12 +74,6 @@ newUser = (result) ->
     services:
       service
 
-usingCurrentUser = (session, db, callback) ->
-  db.collection 'users', (error, users) ->
-    id = new db.bson_serializer.ObjectID(session.userId)
-    users.findOne _id: id, (error, currentUser) ->
-      callback error, currentUser||''
-
 logIn = (user, session) ->
   session.userId = user._id
 
@@ -92,6 +86,5 @@ module.exports =
   tallyize: tallyize
   newService: newService
   newUser: newUser
-  usingCurrentUser: usingCurrentUser
   logIn: logIn
   logOut: logOut
