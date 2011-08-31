@@ -135,7 +135,7 @@
       }
     });
   };
-  renderWithLocals = function(locals, view, next, send) {
+  renderWithLocals = function(locals, view, next, response) {
     return db.collection('users', function(error, users) {
       return withUserData(users, function(error, userData) {
         if (!error) {
@@ -151,7 +151,7 @@
             if (error) {
               return next(error);
             } else {
-              return send(html);
+              return response.send(html);
             }
           });
         } else {
@@ -173,7 +173,7 @@
           title: 'Tapjoy Buffsets.js',
           currentUser: currentUser
         };
-        return renderWithLocals(locals, 'index', next, response.send);
+        return renderWithLocals(locals, 'index', next, response);
       }
     });
   });
@@ -247,7 +247,7 @@
     return db.collection('users', function(error, users) {
       return users.find({
         active: true
-      }).toArray(function(error, users) {
+      }).toArray(function(error, allUsers) {
         if (error) {
           next(error);
         }
@@ -257,11 +257,11 @@
             next(error);
           }
           locals = {
-            title: 'Tapjoy Buffsets.js - Users',
-            users: users,
+            title: 'Users',
+            users: allUsers,
             currentUser: currentUser
           };
-          return renderWithLocals(locals, 'users/index', next, response.send);
+          return renderWithLocals(locals, 'users/index', next, response);
         });
       });
     });
@@ -285,11 +285,11 @@
             next(error);
           }
           locals = {
-            title: 'Tapjoy Buffsets.js - User ' + user.name,
+            title: 'User ' + user.name,
             user: user,
             currentUser: currentUser
           };
-          return renderWithLocals(locals, 'users/show', next, response.send);
+          return renderWithLocals(locals, 'users/show', next, response);
         });
       });
     });
@@ -317,11 +317,11 @@
               next(error);
             }
             locals = {
-              title: 'Tapjoy Buffsets.js - User ' + user.name,
+              title: 'User ' + user.name,
               user: user,
               currentUser: currentUser
             };
-            return renderWithLocals(locals, 'users/edit', next, response.send);
+            return renderWithLocals(locals, 'users/edit', next, response);
           });
         });
       } else {

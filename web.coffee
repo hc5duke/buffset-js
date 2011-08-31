@@ -108,7 +108,7 @@ withUserData = (users, callback) ->
     else
       callback error
 
-renderWithLocals = (locals, view, next, send) ->
+renderWithLocals = (locals, view, next, response) ->
   db.collection 'users', (error, users) ->
     withUserData users, (error, userData) ->
       if !error
@@ -121,7 +121,7 @@ renderWithLocals = (locals, view, next, send) ->
           if error
             next(error)
           else
-            send(html)
+            response.send(html)
       else
         next(error)
 
@@ -132,10 +132,8 @@ app.get '/', (request, response, next) ->
       response.redirect '/users/'
     else
       next error if error
-      locals =
-        title: 'Tapjoy Buffsets.js'
-        currentUser: currentUser
-      renderWithLocals locals, 'index', next, response.send
+      locals = title: 'Tapjoy Buffsets.js', currentUser: currentUser
+      renderWithLocals locals, 'index', next, response
 
 
 app.get '/services/signout', (request, response, next) ->
@@ -187,15 +185,12 @@ app.get '/verify', (request, response, next) ->
 
 app.get '/users', (request, response, next) ->
   db.collection 'users', (error, users) ->
-    users.find( active: true ).toArray (error, users) ->
+    users.find( active: true ).toArray (error, allUsers) ->
       next(error) if error
       withCurrentUser request.session, (error, currentUser) ->
         next error if error
-        locals =
-          title: 'Tapjoy Buffsets.js - Users'
-          users: users
-          currentUser: currentUser
-        renderWithLocals locals, 'users/index', next, response.send
+        locals = title: 'Users', users: allUsers, currentUser: currentUser
+        renderWithLocals locals, 'users/index', next, response
 
 
 app.get '/users/:id', (request, response, next) ->
@@ -206,11 +201,8 @@ app.get '/users/:id', (request, response, next) ->
       next error if error
       withCurrentUser request.session, (error, currentUser) ->
         next error if error
-        locals =
-          title: 'Tapjoy Buffsets.js - User ' + user.name
-          user: user
-          currentUser: currentUser
-        renderWithLocals locals, 'users/show', next, response.send
+        locals = title: 'User ' + user.name, user: user, currentUser: currentUser
+        renderWithLocals locals, 'users/show', next, response
 
 authorizedToEdit = (currentUser, request) ->
   currentUser.admin || request.params.id == currentUser._id
@@ -224,11 +216,8 @@ app.get '/users/:id/edit', (request, response, next) ->
         id = new db.bson_serializer.ObjectID(request.params.id)
         users.findOne _id: id, (error, user) ->
           next error if error
-          locals =
-            title: 'Tapjoy Buffsets.js - User ' + user.name
-            user: user
-            currentUser: currentUser
-          renderWithLocals locals, 'users/edit', next, response.send
+          locals = title: 'User ' + user.name, user: user, currentUser: currentUser
+          renderWithLocals locals, 'users/edit', next, response
     else
       response.redirect '/users/' + request.params.id
 
