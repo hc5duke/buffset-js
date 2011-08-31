@@ -263,30 +263,6 @@
       });
     });
   });
-  app.post('/users/:id', function(request, response, next) {
-    var user;
-    user = {
-      pushup_set_count: request.body.user.pushup_set_count
-    };
-    return db.collection('users', function(err, users) {
-      return users.update({}, {
-        $set: user
-      }, {}, function(err) {
-        return response.redirect('back');
-      });
-    });
-  });
-  app.get('/cart/add/:item', function(req, res) {
-    req.session.items = req.session.items || [];
-    req.session.items.push(req.params.item);
-    return res.send('cart is now ' + '[' + req.session.items.join(',') + ']');
-  });
-  app.get('/cart', function(req, res) {
-    req.session.items = req.session.items || [];
-    if (req.session.items && req.session.items.length) {
-      return res.send('shopping-cart: ' + req.session.items.join(','));
-    }
-  });
   app.listen(port, function() {
     return console.log("Listening on " + port);
   });

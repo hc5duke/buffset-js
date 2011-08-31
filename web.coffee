@@ -193,27 +193,5 @@ app.get '/users/:id', (request, response, next) ->
             response.send html
 
 
-app.post '/users/:id', (request, response, next) ->
-  user = pushup_set_count: request.body.user.pushup_set_count
-  db.collection 'users', (err, users) ->
-    users.update {}
-      $set : user
-      { }
-      (err) ->
-        response.redirect 'back'
-
-
-app.get '/cart/add/:item', (req, res) ->
-  req.session.items = req.session.items || []
-  req.session.items.push(req.params.item)
-  res.send 'cart is now ' + '[' + req.session.items.join(',') + ']'
-
-
-app.get '/cart', (req, res) ->
-  req.session.items = req.session.items || []
-  if req.session.items && req.session.items.length
-    res.send 'shopping-cart: ' + req.session.items.join(',')
-
-
 app.listen port, ->
   console.log "Listening on " + port
