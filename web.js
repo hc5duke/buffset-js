@@ -135,7 +135,7 @@
       }
     });
   };
-  renderWithLocals = function(locals, view, callback) {
+  renderWithLocals = function(locals, view, next, send) {
     return db.collection('users', function(error, users) {
       return withUserData(users, function(error, userData) {
         if (!error) {
@@ -147,9 +147,15 @@
           view = 'views/' + view + '.jade';
           return jade.renderFile(view, {
             locals: locals
-          }, callback);
+          }, function(error, html) {
+            if (error) {
+              return next(error);
+            } else {
+              return send(html);
+            }
+          });
         } else {
-          return callback(error);
+          return next(error);
         }
       });
     });
@@ -167,12 +173,7 @@
           title: 'Tapjoy Buffsets.js',
           currentUser: currentUser
         };
-        return renderWithLocals(locals, 'index', function(error, html) {
-          if (error) {
-            next(error);
-          }
-          return response.send(html);
-        });
+        return renderWithLocals(locals, 'index', next, response.send);
       }
     });
   });
@@ -260,12 +261,7 @@
             users: users,
             currentUser: currentUser
           };
-          return renderWithLocals(locals, 'users/index', function(error, html) {
-            if (error) {
-              next(error);
-            }
-            return response.send(html);
-          });
+          return renderWithLocals(locals, 'users/index', next, response.send);
         });
       });
     });
@@ -293,12 +289,7 @@
             user: user,
             currentUser: currentUser
           };
-          return renderWithLocals(locals, 'users/show', function(error, html) {
-            if (error) {
-              next(error);
-            }
-            return response.send(html);
-          });
+          return renderWithLocals(locals, 'users/show', next, response.send);
         });
       });
     });
@@ -330,12 +321,7 @@
               user: user,
               currentUser: currentUser
             };
-            return renderWithLocals(locals, 'users/edit', function(error, html) {
-              if (error) {
-                next(error);
-              }
-              return response.send(html);
-            });
+            return renderWithLocals(locals, 'users/edit', next, response.send);
           });
         });
       } else {

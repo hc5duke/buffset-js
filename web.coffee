@@ -108,7 +108,7 @@ withUserData = (users, callback) ->
     else
       callback error
 
-renderWithLocals = (locals, view, callback) ->
+renderWithLocals = (locals, view, next, send) ->
   db.collection 'users', (error, users) ->
     withUserData users, (error, userData) ->
       if !error
@@ -117,9 +117,13 @@ renderWithLocals = (locals, view, callback) ->
           users_count: userData.usersCount
           helpers: helpers
         view = 'views/' + view + '.jade'
-        jade.renderFile view, {locals: locals}, callback
+        jade.renderFile view, {locals: locals}, (error, html) ->
+          if error
+            next(error)
+          else
+            send(html)
       else
-        callback(error)
+        next(error)
 
 
 app.get '/', (request, response, next) ->
@@ -131,9 +135,7 @@ app.get '/', (request, response, next) ->
       locals =
         title: 'Tapjoy Buffsets.js'
         currentUser: currentUser
-      renderWithLocals locals, 'index', (error, html) ->
-        next error if error
-        response.send html
+      renderWithLocals locals, 'index', next, response.send
 
 
 app.get '/services/signout', (request, response, next) ->
@@ -193,9 +195,7 @@ app.get '/users', (request, response, next) ->
           title: 'Tapjoy Buffsets.js - Users'
           users: users
           currentUser: currentUser
-        renderWithLocals locals, 'users/index', (error, html) ->
-          next error if error
-          response.send html
+        renderWithLocals locals, 'users/index', next, response.send
 
 
 app.get '/users/:id', (request, response, next) ->
@@ -210,9 +210,7 @@ app.get '/users/:id', (request, response, next) ->
           title: 'Tapjoy Buffsets.js - User ' + user.name
           user: user
           currentUser: currentUser
-        renderWithLocals locals, 'users/show', (error, html) ->
-          next error if error
-          response.send html
+        renderWithLocals locals, 'users/show', next, response.send
 
 authorizedToEdit = (currentUser, request) ->
   currentUser.admin || request.params.id == currentUser._id
@@ -230,9 +228,7 @@ app.get '/users/:id/edit', (request, response, next) ->
             title: 'Tapjoy Buffsets.js - User ' + user.name
             user: user
             currentUser: currentUser
-          renderWithLocals locals, 'users/edit', (error, html) ->
-            next error if error
-            response.send html
+          renderWithLocals locals, 'users/edit', next, response.send
     else
       response.redirect '/users/' + request.params.id
 
