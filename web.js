@@ -448,6 +448,8 @@
     });
   });
   app.get('/chartz', function(request, response, next) {});
+  app.get('/chartz/sum', function(request, response, next) {});
+  app.get('/chartz/punch', function(request, response, next) {});
   app.listen(port, function() {
     return console.log("Listening on " + port);
   });

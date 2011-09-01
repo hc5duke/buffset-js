@@ -276,6 +276,8 @@ app.post '/admin/users/:id', (request, response, next) ->
       response.redirect '/admin/users'
 
 app.get '/chartz', (request, response, next) ->
+app.get '/chartz/sum', (request, response, next) ->
+app.get '/chartz/punch', (request, response, next) ->
 
 
 app.listen port, ->
