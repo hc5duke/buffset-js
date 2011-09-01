@@ -60,7 +60,7 @@ newService = (result) ->
 newUser = (result) ->
   service = newService result
   name = [result.firstname, result.lastname]
-  handle = name.join('').slice 0, 5
+  handle = (result.firstname[0] + result.lastname[0]).toUpperCase()
   email = result.email
   service = newService result
   user =
@@ -70,7 +70,8 @@ newUser = (result) ->
     handle: handle
     multiplier: 20
     name: name.join ' '
-    pushup_set_count: 0
+    buffset_count: 0
+    buffsets: []
     services:
       service
 

@@ -161,7 +161,7 @@
     });
   };
   authorizedToEdit = function(currentUser, request, adminOnly) {
-    return currentUser.admin || (!adminOnly && request.params.id === currentUser._id);
+    return currentUser.admin || (!adminOnly && request.params.id === String(currentUser._id));
   };
   app.get('/', function(request, response, next) {
     return withCurrentUser(request.session, function(error, currentUser) {
@@ -223,9 +223,7 @@
                 next(err);
               }
               if (user) {
-                if (!user.services) {
-                  user.services = [];
-                }
+                user.services || (user.services = []);
                 user.services.push(service);
                 users.update({
                   _id: user._id
@@ -234,12 +232,12 @@
                     services: service
                   }
                 }, false, false);
-                return response.redirect('/users/' + user._id);
               } else {
                 user = helpers.newUser(result);
                 users.insert(user);
-                return response.send("new user created");
               }
+              helpers.logIn(user, request.session);
+              return response.redirect('/users/' + user._id + '/edit');
             });
           }
         });
@@ -414,7 +412,6 @@
       }
       if (currentUser.admin) {
         userParams = request.body.user;
-        console.log(userParams);
         userHash = {};
         userHash.active = userParams.active !== '0';
         userHash.name = userParams.name;

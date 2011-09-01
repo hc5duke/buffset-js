@@ -126,7 +126,7 @@ renderWithLocals = (locals, view, next, response) ->
         next(error)
 
 authorizedToEdit = (currentUser, request, adminOnly) ->
-  currentUser.admin || (!adminOnly && request.params.id == currentUser._id)
+  currentUser.admin || (!adminOnly && request.params.id == String(currentUser._id))
 
 
 app.get '/', (request, response, next) ->
@@ -175,15 +175,15 @@ app.get '/verify', (request, response, next) ->
             users.findOne email: result.email, (err, user) ->
               next(err) if err
               if user
-                user.services = [] if !user.services
+                user.services ||= []
                 user.services.push service
                 users.update({_id: user._id}, {$push: {services: service}}, false, false)
-                response.redirect '/users/' + user._id
               else
                 # 3: create user
                 user = helpers.newUser result
                 users.insert(user)
-                response.send "new user created"
+              helpers.logIn user, request.session
+              response.redirect '/users/' + user._id + '/edit'
 
 
 app.get '/users', (request, response, next) ->
@@ -259,7 +259,6 @@ app.post '/admin/users/:id', (request, response, next) ->
     next error if error
     if currentUser.admin
       userParams = request.body.user
-      console.log userParams
       userHash = {}
       userHash.active = userParams.active != '0'
       userHash.name = userParams.name
