@@ -1,5 +1,5 @@
 mixin userForm(user)
-  form()
+  form(action='/admin/users/' + user._id, method='post')
     input(type="hidden", name="user[active]", value="0")
     input(type="checkbox", name="user[active]", value="1", checked=user.active)
     input(type="text", size="30", name="user[name]", value=user.name)

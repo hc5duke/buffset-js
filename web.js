@@ -379,8 +379,8 @@
       if (authorizedToEdit(currentUser, request)) {
         return db.collection('users', function(error, users) {
           return users.find({
-            $not: {
-              active: true
+            active: {
+              $ne: true
             }
           }).toArray(function(error, inactiveUsers) {
             if (error) {
@@ -406,6 +406,48 @@
       }
     });
   });
+  app.post('/admin/users/:id', function(request, response, next) {
+    return withCurrentUser(request.session, function(error, currentUser) {
+      var id, userHash, userParams;
+      if (error) {
+        next(error);
+      }
+      if (currentUser.admin) {
+        userParams = request.body.user;
+        console.log(userParams);
+        userHash = {};
+        userHash.active = userParams.active !== '0';
+        userHash.name = userParams.name;
+        userHash.handle = userParams.handle;
+        userHash.pushup_set_count = userParams.pushup_set_count;
+        id = new db.bson_serializer.ObjectID(request.params.id);
+        return db.collection('users', function(error, users) {
+          var options;
+          if (error) {
+            next(error);
+          }
+          options = {
+            safe: true,
+            multi: false,
+            upsert: false
+          };
+          return users.update({
+            _id: id
+          }, {
+            $set: userHash
+          }, options, function(error) {
+            if (error) {
+              next(error);
+            }
+            return response.redirect('back');
+          });
+        });
+      } else {
+        return response.redirect('/admin/users');
+      }
+    });
+  });
+  app.get('/chartz', function(request, response, next) {});
   app.listen(port, function() {
     return console.log("Listening on " + port);
   });

@@ -246,12 +246,36 @@ app.get '/admin/users', (request, response, next) ->
     next error if error
     if authorizedToEdit(currentUser, request)
       db.collection 'users', (error, users) ->
-        users.find({ $not: {active: true} }).toArray (error, inactiveUsers) ->
+        users.find({active: {$ne: true}}).toArray (error, inactiveUsers) ->
           next(error) if error
           users.find({active: true}).toArray (error, activeUsers) ->
             next(error) if error
             locals = title: 'Users', activeUsers: activeUsers, inactiveUsers: inactiveUsers, currentUser: currentUser
             renderWithLocals locals, 'admin/users/index', next, response
+
+
+app.post '/admin/users/:id', (request, response, next) ->
+  withCurrentUser request.session, (error, currentUser) ->
+    next error if error
+    if currentUser.admin
+      userParams = request.body.user
+      console.log userParams
+      userHash = {}
+      userHash.active = userParams.active != '0'
+      userHash.name = userParams.name
+      userHash.handle = userParams.handle
+      userHash.pushup_set_count = userParams.pushup_set_count
+      id = new db.bson_serializer.ObjectID(request.params.id)
+      db.collection 'users', (error, users) ->
+        next error if error
+        options = safe: true, multi: false, upsert: false
+        users.update {_id: id}, {$set: userHash }, options, (error) ->
+          next error if error
+          response.redirect 'back'
+    else
+      response.redirect '/admin/users'
+
+app.get '/chartz', (request, response, next) ->
 
 
 app.listen port, ->
