@@ -50,8 +50,8 @@ input {
 .text {
   padding: 170px 60px 0px;
   font-family: 'Walter Turncoat', cursive, arial;
-  font-size: 40px;
-  line-height: 40px;
+  font-size: 30px;
+  line-height: 30px;
 }
 .user {
   padding: 5px 15px 20px;
@@ -64,6 +64,15 @@ input {
 }
 .user .handle a {
   text-decoration: none;
+}
+.center {
+  text-align: center;
+}
+form.edit_user {
+  margin: 0;
+}
+.clear {
+  clear: both;
 }
 #current_user .handle {
   color: #c00;
