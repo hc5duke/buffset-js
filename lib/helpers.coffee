@@ -67,6 +67,8 @@ newUser = (result) ->
     created_at: new Date()
     active: false
     admin: false
+    female: false
+    abuse: false
     email: email
     handle: handle
     multiplier: 20

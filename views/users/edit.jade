@@ -12,14 +12,15 @@ html
             fieldset
               legend Edit user
               .clearfix
-                label(value='email') Email
-                input.xlarge(type='email', disabled='disabled', value=user.email, name='user[email]')
+                label(value='user_email') Email
+                input#user_email.xlarge(type='email', disabled='disabled', value=user.email, name='user[email]')
               .clearfix
-                label(value='handle') Handle
-                input.xlarge(type='text', value=user.handle, name='user[handle]')
+                label(value='user_handle') Handle
+                input#user_handle.xlarge(type='text', value=user.handle, name='user[handle]')
               .clearfix
-                label(value='count') Sets
-                input.xlarge(type='number', min='0', max='3999', value=user.pushup_set_count, name='user[pushup_set_count]')
+                label(value='user_abuse') Abusive language?
+                input#user_abuse(type="hidden", name="user[abuse]", value="0")
+                input#user_abuse(type="checkbox", name="user[abuse]", value="1", checked=user.abuse)
               .clearfix
                 .row
                   .span1.columns &nbsp;
