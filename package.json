@@ -10,6 +10,6 @@
   , "eyes": "0.1.6"
   , "connect-redis": "1.0.7"
   , "underscore": "1.1.7"
-  , "pusher": "0.0.2"
+  , "node-pusher": "0.0.1"
   }
 }

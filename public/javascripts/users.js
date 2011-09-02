@@ -90,6 +90,6 @@ $(function(){
   var pusher = new Pusher('ee24436a8c23a9f95d03'); // Replace with your app key
   var channel = pusher.subscribe('test_channel');
   channel.bind('my_event', function(data) {
-    alert(data);
+    console.log(data);
   });
 });

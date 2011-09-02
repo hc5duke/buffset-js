@@ -1,5 +1,5 @@
 (function() {
-  var Db, Pusher, RedisStore, Server, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withCurrentUser, withUserData, _;
+  var Db, Pusher, RedisStore, Server, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withCurrentUser, withUserData, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -9,16 +9,21 @@
   mongo = require('mongodb');
   redis = require('connect-redis');
   _ = require('underscore');
-  Pusher = require('pusher');
+  Pusher = require('node-pusher');
   helpers = require('./lib/helpers');
   port = process.env.PORT || 4000;
   relyingParty = null;
-  pusherConfig = (process.env.PUSHER_URL || '').split(/:|@|\//);
-  pusher = new Pusher({
-    appId: pusherConfig[7],
-    appKey: pusherConfig[3],
-    secret: pusherConfig[4]
-  });
+  pusher = null;
+  if (process.env.PUSHER_URL) {
+    pusherConfig = process.env.PUSHER_URL.split(/:|@|\//);
+    pusher = new Pusher({
+      appId: pusherConfig[7],
+      key: pusherConfig[3],
+      secret: pusherConfig[4]
+    });
+  }
+  channel = 'test_channel';
+  event = 'my_event';
   extensions = [
     new openid.AttributeExchange({
       "http://axschema.org/contact/email": "required",
@@ -338,8 +343,11 @@
         if (userParams.handle) {
           userHash.handle = userParams.handle;
         }
+        userHash.abuse = userParams.abuse !== '0';
         id = new db.bson_serializer.ObjectID(request.params.id);
-        console.log(userParams);
+        if (pusher) {
+          pusher.trigger(channel, event, userParams);
+        }
         return db.collection('users', function(error, users) {
           var buffset, options, updates;
           if (error) {
@@ -452,16 +460,20 @@
           active: true
         }).toArray(function(error, activeUsers) {
           var locals, series;
-          series = _.map(users, function(user) {
-            var data;
-            data = _.map(user.buffsets(function(buffset) {
-              return [buffset.created_at, buffset.count];
-            }));
-            return {
-              name: user.handle,
-              data: data,
-              multiplier: user.multiplier
-            };
+          series = _.map(activeUsers, function(user) {
+            var currentCount, data;
+            if (user.buffsets.length > 0) {
+              currentCount = -1;
+              data = _.map(user.buffsets, function(buffset) {
+                currentCount += 1;
+                return [buffset.created_at, currentCount];
+              });
+              return {
+                name: user.handle,
+                data: data,
+                multiplier: user.multiplier
+              };
+            }
           });
           locals = {
             title: 'Competitive Chartz',

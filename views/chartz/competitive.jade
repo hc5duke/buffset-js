@@ -1,0 +1,19 @@
+!!! 5
+html
+  include ../includes/head
+  body
+    include ../includes/toolbar
+    .container#body
+      #season-number-outside
+        #season-number 3
+      .text
+        #container
+    script
+      var series = $.parseJSON('#{JSON.stringify(series)}'.replace(/&quot;/g, '"'));
+      for (var ser in series) {
+        var data = series[ser].data;
+        for (var arr in data) {
+          series[ser].data[arr][0] = Date.parse(data[arr][0]);
+        }
+      }
+      createChart(series);

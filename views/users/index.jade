@@ -31,7 +31,7 @@ html
                   .clear
                   input.btn#cancel_edit(type="submit", value="cancel")
               - else
-                .count= helpers.tallyize(user.pushup_set_count)
+                .count= helpers.tallyize(user.buffsets.length)
 
     include ../includes/footer
     script

@@ -7,17 +7,20 @@ jade = require 'jade'
 mongo = require 'mongodb'
 redis = require 'connect-redis'
 _ = require 'underscore'
-Pusher = require 'pusher'
+Pusher = require 'node-pusher'
 helpers = require './lib/helpers'
 port = process.env.PORT || 4000
 relyingParty = null
 
-pusherConfig = (process.env.PUSHER_URL||'').split(/:|@|\//)
-pusher = new Pusher
-  appId:  pusherConfig[7]
-  appKey: pusherConfig[3]
-  secret: pusherConfig[4]
-# channel = pusher.channel 'test_channel'
+pusher = null
+if process.env.PUSHER_URL
+  pusherConfig = process.env.PUSHER_URL.split(/:|@|\//)
+  pusher = new Pusher
+    appId:  pusherConfig[7]
+    key: pusherConfig[3]
+    secret: pusherConfig[4]
+channel = 'test_channel'
+event = 'my_event'
 
 extensions = [
   new openid.AttributeExchange
@@ -228,8 +231,9 @@ app.post '/users/:id', (request, response, next) ->
       userParams = request.body.user
       userHash = {}
       userHash.handle = userParams.handle if userParams.handle
+      userHash.abuse = userParams.abuse != '0'
       id = new db.bson_serializer.ObjectID(request.params.id)
-      console.log userParams
+      pusher.trigger channel, event, userParams if pusher
       db.collection 'users', (error, users) ->
         next error if error
         buffset = helpers.newBuffset(request.params.id, userParams.buffset_type)
@@ -278,10 +282,13 @@ app.get '/chartz', (request, response, next) ->
   withCurrentUser request.session, (error, currentUser) ->
     db.collection 'users', (error, users) ->
       users.find({active: true}).toArray (error, activeUsers) ->
-        series = _.map users, (user) ->
-          data = _.map user.buffsets (buffset) ->
-            [ buffset.created_at, buffset.count ]
-          name: user.handle, data: data, multiplier: user.multiplier
+        series = _.map activeUsers, (user) ->
+          if user.buffsets.length > 0
+            currentCount = -1
+            data = _.map user.buffsets, (buffset) ->
+              currentCount += 1
+              [ buffset.created_at, currentCount ]
+            name: user.handle, data: data, multiplier: user.multiplier
         locals =
           title: 'Competitive Chartz'
           activeUsers: activeUsers
