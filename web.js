@@ -224,7 +224,6 @@
               }
               if (user) {
                 user.services || (user.services = []);
-                user.services.push(service);
                 users.update({
                   _id: user._id
                 }, {
@@ -336,18 +335,23 @@
       if (authorizedToEdit(currentUser, request)) {
         userParams = request.body.user;
         userHash = {};
-        if (userParams.pushup_set_count) {
-          userHash.pushup_set_count = userParams.pushup_set_count;
-        }
         if (userParams.handle) {
           userHash.handle = userParams.handle;
         }
         id = new db.bson_serializer.ObjectID(request.params.id);
+        console.log(userParams);
         return db.collection('users', function(error, users) {
-          var options;
+          var buffset, options, updates;
           if (error) {
             next(error);
           }
+          buffset = helpers.newBuffset(request.params.id, userParams.buffset_type);
+          updates = {
+            $set: userHash,
+            $push: {
+              buffsets: buffset
+            }
+          };
           options = {
             safe: true,
             multi: false,
@@ -355,9 +359,7 @@
           };
           return users.update({
             _id: id
-          }, {
-            $set: userHash
-          }, options, function(error) {
+          }, updates, options, function(error) {
             if (error) {
               next(error);
             }
@@ -416,7 +418,6 @@
         userHash.active = userParams.active !== '0';
         userHash.name = userParams.name;
         userHash.handle = userParams.handle;
-        userHash.pushup_set_count = userParams.pushup_set_count;
         id = new db.bson_serializer.ObjectID(request.params.id);
         return db.collection('users', function(error, users) {
           var options;
@@ -444,7 +445,35 @@
       }
     });
   });
-  app.get('/chartz', function(request, response, next) {});
+  app.get('/chartz', function(request, response, next) {
+    return withCurrentUser(request.session, function(error, currentUser) {
+      return db.collection('users', function(error, users) {
+        return users.find({
+          active: true
+        }).toArray(function(error, activeUsers) {
+          var locals, series;
+          series = _.map(users, function(user) {
+            var data;
+            data = _.map(user.buffsets(function(buffset) {
+              return [buffset.created_at, buffset.count];
+            }));
+            return {
+              name: user.handle,
+              data: data,
+              multiplier: user.multiplier
+            };
+          });
+          locals = {
+            title: 'Competitive Chartz',
+            activeUsers: activeUsers,
+            currentUser: currentUser,
+            series: series
+          };
+          return renderWithLocals(locals, 'chartz/competitive', next, response);
+        });
+      });
+    });
+  });
   app.get('/chartz/sum', function(request, response, next) {});
   app.get('/chartz/punch', function(request, response, next) {});
   app.listen(port, function() {

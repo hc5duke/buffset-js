@@ -9,20 +9,22 @@ html
       #container
         section#users.text
           - each user in users
-            - myUser = (String(user._id) == String(currentUser._id))
+            - myUser = (user._id == String(currentUser._id))
             - user_id = myUser ? 'current_user' : "user_" + user._id
             .user(id = user_id)
               .handle
                 a(href = '/users/' + user._id)= user.handle
               - if (myUser)
                 .count#edit_current_user
-                  a(href = '#')= helpers.tallyize(user.pushup_set_count)
+                  a(href = '#')= helpers.tallyize(user.buffsets.length)
                 .hidden#edit_current_user_form
                   form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                    input#user_pushup_set_count(max="3999", min="0", name="user[pushup_set_count]", size="6", type="number", value="#{user.pushup_set_count}")
-                    input#user_submit(name="commit", type="submit", value="save")
-                    div
-                      input#cancel_edit(type="submit", value="cancel")
+                    select#user_buffset_type(name="user[buffset_type]")
+                      option(value="pushup") Push-up (20)
+                      option(value="pullup") Pull-up (5)
+                      option(value="situp") Sit-up (30)
+                    input.btn.primary#user_submit(name="commit", type="submit", value="save")
+                    input.btn#cancel_edit(type="submit", value="cancel")
               - else
                 .count= helpers.tallyize(user.pushup_set_count)
 

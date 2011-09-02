@@ -64,16 +64,21 @@ newUser = (result) ->
   email = result.email
   service = newService result
   user =
+    created_at: new Date()
     active: false
     admin: false
     email: email
     handle: handle
     multiplier: 20
     name: name.join ' '
-    buffset_count: 0
     buffsets: []
     services:
       service
+
+newBuffset = (userId, buffsetType) ->
+  created_at: new Date()
+  user_id: userId
+  type: buffsetType
 
 logIn = (user, session) ->
   session.userId = user._id
@@ -89,3 +94,4 @@ module.exports =
   newUser: newUser
   logIn: logIn
   logOut: logOut
+  newBuffset: newBuffset

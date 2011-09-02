@@ -176,7 +176,6 @@ app.get '/verify', (request, response, next) ->
               next(err) if err
               if user
                 user.services ||= []
-                user.services.push service
                 users.update({_id: user._id}, {$push: {services: service}}, false, false)
               else
                 # 3: create user
@@ -228,13 +227,15 @@ app.post '/users/:id', (request, response, next) ->
     if authorizedToEdit(currentUser, request)
       userParams = request.body.user
       userHash = {}
-      userHash.pushup_set_count = userParams.pushup_set_count if userParams.pushup_set_count
       userHash.handle = userParams.handle if userParams.handle
       id = new db.bson_serializer.ObjectID(request.params.id)
+      console.log userParams
       db.collection 'users', (error, users) ->
         next error if error
+        buffset = helpers.newBuffset(request.params.id, userParams.buffset_type)
+        updates = $set: userHash, $push: buffsets: buffset
         options = safe: true, multi: false, upsert: false
-        users.update {_id: id}, {$set: userHash }, options, (error) ->
+        users.update {_id: id}, updates, options, (error) ->
           next error if error
           response.redirect 'back'
     else
@@ -263,7 +264,6 @@ app.post '/admin/users/:id', (request, response, next) ->
       userHash.active = userParams.active != '0'
       userHash.name = userParams.name
       userHash.handle = userParams.handle
-      userHash.pushup_set_count = userParams.pushup_set_count
       id = new db.bson_serializer.ObjectID(request.params.id)
       db.collection 'users', (error, users) ->
         next error if error
@@ -275,7 +275,24 @@ app.post '/admin/users/:id', (request, response, next) ->
       response.redirect '/admin/users'
 
 app.get '/chartz', (request, response, next) ->
+  withCurrentUser request.session, (error, currentUser) ->
+    db.collection 'users', (error, users) ->
+      users.find({active: true}).toArray (error, activeUsers) ->
+        series = _.map users, (user) ->
+          data = _.map user.buffsets (buffset) ->
+            [ buffset.created_at, buffset.count ]
+          name: user.handle, data: data, multiplier: user.multiplier
+        locals =
+          title: 'Competitive Chartz'
+          activeUsers: activeUsers
+          currentUser: currentUser
+          series: series
+        renderWithLocals locals, 'chartz/competitive', next, response
+
+
 app.get '/chartz/sum', (request, response, next) ->
+
+
 app.get '/chartz/punch', (request, response, next) ->
 
 
