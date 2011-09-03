@@ -8,6 +8,7 @@ html
         #season-number 3
       .text
         #container
+    include ../includes/footer
     script
       var series = $.parseJSON('#{JSON.stringify(series)}'.replace(/&quot;/g, '"'));
       for (var ser in series) {
