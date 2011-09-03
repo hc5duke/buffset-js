@@ -228,9 +228,8 @@ $(function(){
 var pusher = new Pusher('ee24436a8c23a9f95d03'); // Replace with your app key
 var channel = pusher.subscribe('test_channel');
 var bindPusher = function(){
-  console.log('bind pusher');
   channel.bind('my_event', function(data) {
-    console.log(data);
-    $('user_' + data._id);
+    var count = data.buffsets;
+    $('#user_' + data.id + ' .count').text(count)
   });
 };

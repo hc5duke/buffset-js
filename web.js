@@ -21,6 +21,8 @@
       key: pusherConfig[3],
       secret: pusherConfig[4]
     });
+  } else {
+    console.log("WARNING: no Pusher");
   }
   channel = 'test_channel';
   event = 'my_event';
@@ -345,21 +347,32 @@
         }
         userHash.abuse = userParams.abuse !== '0';
         id = new db.bson_serializer.ObjectID(request.params.id);
-        if (pusher) {
-          pusher.trigger(channel, event, userParams);
-        }
         return db.collection('users', function(error, users) {
           var buffset, options, updates;
           if (error) {
             next(error);
           }
-          buffset = helpers.newBuffset(request.params.id, userParams.buffset_type);
           updates = {
-            $set: userHash,
-            $push: {
-              buffsets: buffset
-            }
+            $set: userHash
           };
+          if (userParams.buffset_type) {
+            buffset = helpers.newBuffset(request.params.id, userParams.buffset_type);
+            updates['$push'] = {
+              buffsets: buffset
+            };
+            if (pusher) {
+              users.findOne({
+                _id: id
+              }, function(error, user) {
+                var userData;
+                userData = {
+                  id: user._id,
+                  buffsets: helpers.tallyize(user.buffsets.length + 1)
+                };
+                return pusher.trigger(channel, event, userData);
+              });
+            }
+          }
           options = {
             safe: true,
             multi: false,

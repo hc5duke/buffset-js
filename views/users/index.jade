@@ -11,7 +11,7 @@ html
           - each user in users
             - myUser = (currentUser && user._id == String(currentUser._id))
             - user_id = myUser ? 'current_user' : "user_" + user._id
-            .user(id = 'user_' + user_id)
+            .user(id=user_id)
               .handle
                 a(href = '/users/' + user._id)= user.handle
               - if (myUser)
@@ -37,4 +37,3 @@ html
     - if (currentUser)
       script
         bindPusher();
-
