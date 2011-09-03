@@ -33,7 +33,7 @@ input {
   width: 878px;
   height: 677px;
   margin: 0px auto;
-  background-image: url(/images/buffset.jpg);
+  background-image: url(https://s3.amazonaws.com/dev_tapjoy/buffsets/buffsets.jpg);
   background-repeat: no-repeat;
   text-align: center;
 }

@@ -198,7 +198,7 @@ $(function(){
     var notify = function(name, count){
       var options = {
         notificationType: 'simple',
-        image: '/images/muscle.gif',
+        image: 'https://s3.amazonaws.com/dev_tapjoy/buffsets/muscle.gif',
         title:  name + ' is now at ' + count + '!',
         content: encouragements[Math.floor(Math.random() * encouragements.length)]
       };

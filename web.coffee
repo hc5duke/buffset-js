@@ -54,6 +54,7 @@ app.configure 'development', ->
       maxAge: 24 * 60 * 60 * 1000
   relyingParty = new openid.RelyingParty 'http://dev:'+port+'/verify', null, false, false, extensions
 
+
 app.configure 'production', ->
   oneYear = 31557600000
   app.use express.static __dirname + '/public', maxAge: oneYear
