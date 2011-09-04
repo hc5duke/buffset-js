@@ -75,7 +75,7 @@ app.configure 'production', ->
       pass: redisConfig[4]
       host: redisConfig[5]
       port: redisConfig[6]
-  relyingParty = new openid.RelyingParty 'https://buffsets.tapjoy.com:'+port+'/verify', null, false, false, extensions
+  relyingParty = new openid.RelyingParty 'https://buffsets.tapjoy.com/verify', null, false, false, extensions
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server

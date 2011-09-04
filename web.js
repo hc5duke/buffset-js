@@ -85,7 +85,7 @@
         port: redisConfig[6]
       })
     }));
-    return relyingParty = new openid.RelyingParty('https://buffsets.tapjoy.com:' + port + '/verify', null, false, false, extensions);
+    return relyingParty = new openid.RelyingParty('https://buffsets.tapjoy.com/verify', null, false, false, extensions);
   });
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
