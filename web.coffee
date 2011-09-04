@@ -194,6 +194,14 @@ app.get '/users', (request, response, next) ->
   db.collection 'users', (error, users) ->
     users.find( active: true ).toArray (error, allUsers) ->
       next(error) if error
+      allUsers = _.groupBy allUsers, (user) ->
+        user.buffsets.length
+      allUsers = _.map allUsers, (users) ->
+        users = _.sortBy users, (user) ->
+          user.handle.toLowerCase()
+        users.reverse()
+      allUsers = _.flatten(allUsers).reverse()
+
       withCurrentUser request.session, (error, currentUser) ->
         next error if error
         locals = title: 'Users', users: allUsers, currentUser: currentUser

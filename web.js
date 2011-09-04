@@ -258,6 +258,16 @@
         if (error) {
           next(error);
         }
+        allUsers = _.groupBy(allUsers, function(user) {
+          return user.buffsets.length;
+        });
+        allUsers = _.map(allUsers, function(users) {
+          users = _.sortBy(users, function(user) {
+            return user.handle.toLowerCase();
+          });
+          return users.reverse();
+        });
+        allUsers = _.flatten(allUsers).reverse();
         return withCurrentUser(request.session, function(error, currentUser) {
           var locals;
           if (error) {
