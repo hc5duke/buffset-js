@@ -79,7 +79,7 @@
     app.use(express.session({
       secret: "keyboard cat",
       store: new RedisStore({
-        maxAge: 90 * 24 * 60 * 60 * 1000,
+        maxAge: oneYear,
         pass: redisConfig[4],
         host: redisConfig[5],
         port: redisConfig[6]
@@ -439,6 +439,8 @@
             });
           });
         });
+      } else {
+        return response.redirect('/users');
       }
     });
   });
@@ -477,7 +479,7 @@
           });
         });
       } else {
-        return response.redirect('/admin/users');
+        return response.redirect('/users');
       }
     });
   });

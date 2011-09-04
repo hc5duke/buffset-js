@@ -71,7 +71,7 @@ app.configure 'production', ->
   app.use express.session
     secret: "keyboard cat"
     store: new RedisStore
-      maxAge: 90 * 24 * 60 * 60 * 1000
+      maxAge: oneYear
       pass: redisConfig[4]
       host: redisConfig[5]
       port: redisConfig[6]
@@ -278,6 +278,8 @@ app.get '/admin/users', (request, response, next) ->
             next(error) if error
             locals = title: 'Users', activeUsers: activeUsers, inactiveUsers: inactiveUsers, currentUser: currentUser
             renderWithLocals locals, 'admin/users/index', next, response
+    else
+      response.redirect '/users'
 
 
 app.post '/admin/users/:id', (request, response, next) ->
@@ -297,7 +299,7 @@ app.post '/admin/users/:id', (request, response, next) ->
           next error if error
           response.redirect 'back'
     else
-      response.redirect '/admin/users'
+      response.redirect '/users'
 
 app.get '/chartz', (request, response, next) ->
   withCurrentUser request.session, (error, currentUser) ->
