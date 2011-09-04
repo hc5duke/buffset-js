@@ -48,12 +48,13 @@ app.configure ->
   app.use express.cookieParser()
 
 app.configure 'development', ->
+  oneYear = 31557600000
   app.use express.static __dirname + '/public'
   app.use express.errorHandler dumpExceptions: true, showStack: true
   app.use express.session
     secret: "keyboard cat"
     store: new RedisStore
-      maxAge: 24 * 60 * 60 * 1000
+      maxAge: oneYear
   relyingParty = new openid.RelyingParty 'http://dev:'+port+'/verify', null, false, false, extensions
 
 
@@ -194,11 +195,9 @@ app.get '/users', (request, response, next) ->
   db.collection 'users', (error, users) ->
     users.find( active: true ).toArray (error, allUsers) ->
       next(error) if error
-      allUsers = _.groupBy allUsers, (user) ->
-        user.buffsets.length
+      allUsers = _.groupBy allUsers, (user) -> user.buffsets.length
       allUsers = _.map allUsers, (users) ->
-        users = _.sortBy users, (user) ->
-          user.handle.toLowerCase()
+        users = _.sortBy users, (user) -> user.handle.toLowerCase()
         users.reverse()
       allUsers = _.flatten(allUsers).reverse()
 
