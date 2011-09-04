@@ -101,7 +101,6 @@ withCurrentUser = (session, callback) ->
         callback error, currentUser || false
 
 withUserData = (users, callback) ->
-  # TODO: move these to memcached
   users.count {active: true}, (error, activeUsersCount) ->
     if !error
       users.count {}, (error, usersCount) ->
@@ -251,9 +250,9 @@ app.post '/users/:id', (request, response, next) ->
         options = safe: true, multi: false, upsert: false
         users.update {_id: id}, updates, options, (error) ->
           next error if error
-          response.redirect 'back'
+          response.redirect '/users'
     else
-      response.redirect '/users/' + request.params.id
+      response.redirect 'back'
 
 
 app.get '/admin/users', (request, response, next) ->

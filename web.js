@@ -384,11 +384,11 @@
             if (error) {
               next(error);
             }
-            return response.redirect('back');
+            return response.redirect('/users');
           });
         });
       } else {
-        return response.redirect('/users/' + request.params.id);
+        return response.redirect('back');
       }
     });
   });
