@@ -71,7 +71,6 @@ newUser = (result) ->
     abuse: false
     email: email
     handle: handle
-    multiplier: 20
     name: name.join ' '
     buffsets: []
     services:
