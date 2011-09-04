@@ -287,16 +287,31 @@
           next(error);
         }
         return withCurrentUser(request.session, function(error, currentUser) {
-          var locals;
+          var currentCount, data, locals, series;
           if (error) {
             next(error);
           }
+          series = [];
+          if (user.buffsets.length > 0) {
+            currentCount = -1;
+            data = _.map(user.buffsets, function(buffset) {
+              currentCount += 1;
+              return [buffset.created_at, currentCount];
+            });
+            series = [
+              {
+                name: user.handle,
+                data: data,
+                multiplier: user.multiplier
+              }
+            ];
+          }
           locals = {
-            title: 'User ' + user.name,
-            user: user,
-            currentUser: currentUser
+            title: 'Competitive Chartz',
+            currentUser: currentUser,
+            series: series
           };
-          return renderWithLocals(locals, 'users/show', next, response);
+          return renderWithLocals(locals, 'chartz/competitive', next, response);
         });
       });
     });

@@ -208,8 +208,20 @@ app.get '/users/:id', (request, response, next) ->
       next error if error
       withCurrentUser request.session, (error, currentUser) ->
         next error if error
-        locals = title: 'User ' + user.name, user: user, currentUser: currentUser
-        renderWithLocals locals, 'users/show', next, response
+        series = []
+        if user.buffsets.length > 0
+          currentCount = -1
+          data = _.map user.buffsets, (buffset) ->
+            currentCount += 1
+            [ buffset.created_at, currentCount ]
+          series = [
+            name: user.handle, data: data, multiplier: user.multiplier
+          ]
+        locals =
+          title: 'Competitive Chartz'
+          currentUser: currentUser
+          series: series
+        renderWithLocals locals, 'chartz/competitive', next, response
 
 app.get '/users/:id/edit', (request, response, next) ->
   withCurrentUser request.session, (error, currentUser) ->
