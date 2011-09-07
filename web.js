@@ -502,6 +502,9 @@
           active: true
         }).toArray(function(error, activeUsers) {
           var locals, series;
+          activeUsers = _.select(activeUsers, function(user) {
+            return user.buffsets.length > 0;
+          });
           series = _.map(activeUsers, function(user) {
             var currentCount, data;
             if (user.buffsets.length > 0) {
@@ -528,7 +531,66 @@
       });
     });
   });
-  app.get('/chartz/sum', function(request, response, next) {});
+  app.get('/chartz/sum', function(request, response, next) {
+    var series;
+    series = [];
+    return withCurrentUser(request.session, function(error, currentUser) {
+      return db.collection('users', function(error, users) {
+        return users.find({
+          active: true
+        }).toArray(function(error, activeUsers) {
+          var buffsets, data, date, dates, earliest, latest, locals;
+          activeUsers = _.select(activeUsers, function(user) {
+            return user.buffsets.length > 0;
+          });
+          earliest = Infinity;
+          latest = 0;
+          buffsets = {};
+          _.each(activeUsers, function(user) {
+            return buffsets[user.handle] = {};
+          });
+          _.each(activeUsers, function(user) {
+            return _.each(user.buffsets, function(buffset) {
+              var created_at, _base;
+              created_at = helpers.endOfDay(buffset.created_at);
+              if (latest < created_at) {
+                latest = created_at;
+              }
+              if (earliest > created_at) {
+                earliest = created_at;
+              }
+              (_base = buffsets[user.handle])[created_at] || (_base[created_at] = 0);
+              return buffsets[user.handle][created_at] += 1;
+            });
+          });
+          date = earliest;
+          dates = [];
+          while (date <= latest) {
+            dates.push([1 + date.getUTCMonth(), '/', date.getUTCDate()].join(''));
+            date = new Date(date - 0 + 24 * 3600 * 1000);
+          }
+          data = [];
+          _.each(buffsets, function(value, key) {
+            var counts;
+            counts = _.map(value, function(count, date) {
+              return count;
+            });
+            return data.push({
+              name: key,
+              data: counts
+            });
+          });
+          locals = {
+            title: 'Tapjoy Buffsets.js',
+            currentUser: currentUser,
+            series: data,
+            categories: dates
+          };
+          return renderWithLocals(locals, 'chartz/cumulative', next, response);
+        });
+      });
+    });
+  });
   app.get('/chartz/punch', function(request, response, next) {});
   app.listen(port, function() {
     return console.log("Listening on " + port);

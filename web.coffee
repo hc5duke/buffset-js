@@ -308,10 +308,13 @@ app.post '/admin/users/:id', (request, response, next) ->
     else
       response.redirect '/users'
 
+
 app.get '/chartz', (request, response, next) ->
   withCurrentUser request.session, (error, currentUser) ->
     db.collection 'users', (error, users) ->
       users.find({active: true}).toArray (error, activeUsers) ->
+        activeUsers = _.select activeUsers, (user) ->
+          user.buffsets.length > 0
         series = _.map activeUsers, (user) ->
           if user.buffsets.length > 0
             currentCount = -1
@@ -328,6 +331,39 @@ app.get '/chartz', (request, response, next) ->
 
 
 app.get '/chartz/sum', (request, response, next) ->
+  series = []
+  withCurrentUser request.session, (error, currentUser) ->
+    db.collection 'users', (error, users) ->
+      users.find({active: true}).toArray (error, activeUsers) ->
+        activeUsers = _.select activeUsers, (user) ->
+          user.buffsets.length > 0
+        earliest = Infinity
+        latest = 0
+        buffsets = {}
+        _.each activeUsers, (user) ->
+          buffsets[user.handle] = {}
+        _.each activeUsers, (user) ->
+          _.each user.buffsets, (buffset) ->
+            created_at = helpers.endOfDay(buffset.created_at)
+            latest   = created_at if latest   < created_at
+            earliest = created_at if earliest > created_at
+            buffsets[user.handle][created_at] ||= 0
+            buffsets[user.handle][created_at] += 1
+        date = earliest
+        dates = []
+        while date <= latest
+          dates.push [1+date.getUTCMonth(), '/', date.getUTCDate()].join ''
+          date = new Date(date - 0 + 24 * 3600 * 1000)
+        data = []
+        _.each buffsets, (value, key) ->
+          counts = _.map value, (count, date) -> count
+          data.push name: key, data: counts
+        locals =
+          title: 'Tapjoy Buffsets.js'
+          currentUser: currentUser
+          series: data
+          categories: dates
+        renderWithLocals locals, 'chartz/cumulative', next, response
 
 
 app.get '/chartz/punch', (request, response, next) ->
