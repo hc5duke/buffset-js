@@ -228,6 +228,7 @@
             return users.findOne({
               email: result.email
             }, function(err, user) {
+              var email, is_tapjoy;
               if (err) {
                 next(err);
               }
@@ -242,6 +243,10 @@
                 }, false, false);
               } else {
                 user = helpers.newUser(result);
+                email = user.email;
+                is_tapjoy = email.match(/@tapjoy\.com$/ != null ? /@tapjoy\.com$/ : {
+                  "true": false
+                });
                 users.insert(user);
               }
               helpers.logIn(user, request.session);
@@ -400,7 +405,6 @@
                   count: count,
                   tally: tally
                 };
-                console.log(userData);
                 return pusher.trigger(channel, event, userData);
               });
             }
@@ -510,6 +514,9 @@
           activeUsers = _.select(activeUsers, function(user) {
             return user.buffsets.length > 0;
           });
+          activeUsers = _.sortBy(activeUsers, function(user) {
+            return -user.buffsets.length;
+          });
           series = _.map(activeUsers, function(user) {
             var currentCount, data;
             if (user.buffsets.length > 0) {
@@ -546,6 +553,9 @@
           activeUsers = _.select(activeUsers, function(user) {
             return user.buffsets.length > 0;
           });
+          activeUsers = _.sortBy(activeUsers, function(user) {
+            return -user.buffsets.length;
+          });
           earliest = Infinity;
           latest = 0;
           buffsets = {};
@@ -572,7 +582,6 @@
             dates.push(date);
             date = new Date(date - 0 + 24 * 3600 * 1000);
           }
-          console.log(dates);
           _.each(activeUsers, function(user) {
             var arr, sum;
             sum = 0;

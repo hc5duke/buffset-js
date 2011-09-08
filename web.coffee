@@ -186,6 +186,8 @@ app.get '/verify', (request, response, next) ->
               else
                 # 3: create user
                 user = helpers.newUser result
+                email = user.email
+                is_tapjoy = email.match /@tapjoy\.com$/ ? true : false
                 users.insert(user)
               helpers.logIn user, request.session
               response.redirect '/users/' + user._id + '/edit'
@@ -221,9 +223,7 @@ app.get '/users/:id', (request, response, next) ->
           data = _.map user.buffsets, (buffset) ->
             currentCount += 1
             [ buffset.created_at, currentCount ]
-          series = [
-            name: user.handle, data: data, multiplier: user.multiplier
-          ]
+          series = [{ name: user.handle, data: data, multiplier: user.multiplier }]
         locals =
           title: 'Competitive Chartz'
           currentUser: currentUser
@@ -315,6 +315,8 @@ app.get '/chartz', (request, response, next) ->
       users.find({active: true}).toArray (error, activeUsers) ->
         activeUsers = _.select activeUsers, (user) ->
           user.buffsets.length > 0
+        activeUsers = _.sortBy activeUsers, (user) ->
+          - user.buffsets.length
         series = _.map activeUsers, (user) ->
           if user.buffsets.length > 0
             currentCount = 0
@@ -336,6 +338,8 @@ app.get '/chartz/sum', (request, response, next) ->
       users.find({active: true}).toArray (error, activeUsers) ->
         activeUsers = _.select activeUsers, (user) ->
           user.buffsets.length > 0
+        activeUsers = _.sortBy activeUsers, (user) ->
+          - user.buffsets.length
         earliest = Infinity
         latest = 0
         buffsets = {}
@@ -354,7 +358,6 @@ app.get '/chartz/sum', (request, response, next) ->
         while date <= latest
           dates.push date
           date = new Date(date - 0 + 24 * 3600 * 1000)
-        console.log dates
 
         _.each activeUsers, (user) ->
           sum = 0
