@@ -155,81 +155,73 @@ $('#cancel_edit').click(function(){
   return false;
 });
 
-$('#enable_notifications').click(function(){
-  checkStatus();
-  return false;
-});
+var update = $.noop;
 
-$(function(){
-  if (window.webkitNotifications) {
-    function createNotificationInstance(options) {
-      if (options.notificationType == 'simple') {
-        return window.webkitNotifications.createNotification(options.image, options.title, options.content);
-      } else if (options.notificationType == 'html') {
-        return window.webkitNotifications.createHTMLNotification(options.url);
-      }
+if (window.webkitNotifications) {
+  function createNotificationInstance(options) {
+    if (options.notificationType == 'simple') {
+      return window.webkitNotifications.createNotification(options.image, options.title, options.content);
+    } else if (options.notificationType == 'html') {
+      return window.webkitNotifications.createHTMLNotification(options.url);
     }
-
-    var checkStatus = function(){
-      if (window.webkitNotifications.checkPermission() == 0) { // notifications enabled
-        $('#enable_notifications').hide();
-        $.get('/users.json', {}, function(response){
-          if (response.length != usersHash.length) {
-            location.reload(true);
-          }
-          for (var u in response) {
-            if (response[u].count != usersHash[u].count) {
-              usersHash[u] = response[u];
-              var five = String.fromCharCode(47, 822, 47, 822, 47, 822, 47, 822);
-              var tally = response[u].tally.replace(/_V_/g, five);
-              $('#user_' + u).find('.count').text(tally);
-              notify(response[u].name, response[u].count);
-            }
-          }
-          setTimeout(checkStatus, 15000);
-        });
-      } else if (window.webkitNotifications.checkPermission() == 2) { // notifications disabled
-        $('#enable_notifications').hide();
-      } else { // permission hasn't been asked yet
-        window.webkitNotifications.requestPermission(checkStatus);
-      }
-    };
-
-    var notify = function(name, count){
-      var options = {
-        notificationType: 'simple',
-        image: 'https://s3.amazonaws.com/dev_tapjoy/buffsets/muscle.gif',
-        title:  name + ' is now at ' + count + '!',
-        content: encouragements[Math.floor(Math.random() * encouragements.length)]
-      };
-      var notification = createNotificationInstance(options);
-      notification.ondisplay = function() {};
-      notification.onclose = function() {};
-      notification.show();
-      setTimeout(function() {
-        notification.cancel();
-      },'15000');
-    };
-
-    var encouragements = [
-    ];
-    var discouragements = [
-      'You are weak.',
-      'You are a bitch.'
-    ];
-
-    checkStatus();
-  } else {
-    $('#enable_notifications').hide();
   }
 
-});
+  update = function(data){
+    if (window.webkitNotifications.checkPermission() == 0) { // notifications enabled
+      $('#enable_notifications').hide();
+      if (data) {
+        notify(data);
+      }
+    } else if (window.webkitNotifications.checkPermission() == 2) { // notifications disabled
+      $('#enable_notifications').hide();
+    } else { // permission hasn't been asked yet
+      window.webkitNotifications.requestPermission(update);
+    }
+  };
 
-var pusher = new Pusher('ee24436a8c23a9f95d03'); // Replace with your app key
+  var notify = function(data){
+    var name = data.name;
+    var count = data.count;
+    var tally = data.tally;
+    var options = {
+      notificationType: 'simple',
+      image: 'https://s3.amazonaws.com/dev_tapjoy/buffsets/muscle.gif',
+      title:  name + ' is now at ' + count + '!',
+      content: encouragements[Math.floor(Math.random() * encouragements.length)]
+    };
+    var notification = createNotificationInstance(options);
+    notification.ondisplay = $.noop;
+    notification.onclose = $.noop;
+    notification.show();
+    setTimeout(function() {
+      notification.cancel();
+    }, 15000);
+  };
+
+  var encouragements = [
+    'You should be doing buffsets.'
+  ];
+  var discouragements = [
+    'You are weak.',
+    'You are a bitch.'
+  ];
+
+  $('#enable_notifications').click(function(){
+    update();
+    return false;
+  });
+  update();
+
+} else {
+  $('#enable_notifications').hide();
+}
+
+var pusher = new Pusher('ee24436a8c23a9f95d03');
 var channel = pusher.subscribe('test_channel');
-var bindPusher = function(){
+var bindPusher = function() {
   channel.bind('my_event', function(data) {
-    var count = data.buffsets;
-    $('#user_' + data.id + ' .count').text(count)
+    var find = '#user_' + data.id + ' .count';
+    $(find).text(data.tally);
+    update(data);
   });
 };

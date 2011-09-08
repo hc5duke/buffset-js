@@ -262,9 +262,9 @@ app.post '/users/:id', (request, response, next) ->
           updates['$push'] = buffsets: buffset
           if pusher
             users.findOne _id: id, (error, user) ->
-              userData =
-                id: user._id
-                buffsets: helpers.tallyize(user.buffsets.length + 1)
+              count = user.buffsets.length + 1
+              tally = helpers.tallyize(count)
+              userData = id: user._id, name: user.name, count: count, tally: tally
               pusher.trigger channel, event, userData
         options = safe: true, multi: false, upsert: false
         users.update {_id: id}, updates, options, (error) ->

@@ -391,11 +391,16 @@
               users.findOne({
                 _id: id
               }, function(error, user) {
-                var userData;
+                var count, tally, userData;
+                count = user.buffsets.length + 1;
+                tally = helpers.tallyize(count);
                 userData = {
                   id: user._id,
-                  buffsets: helpers.tallyize(user.buffsets.length + 1)
+                  name: user.name,
+                  count: count,
+                  tally: tally
                 };
+                console.log(userData);
                 return pusher.trigger(channel, event, userData);
               });
             }
