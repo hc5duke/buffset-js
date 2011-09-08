@@ -276,13 +276,20 @@
         });
         allUsers = _.flatten(allUsers).reverse();
         return withCurrentUser(request.session, function(error, currentUser) {
-          var locals;
+          var locals, teams;
+          teams = [[], []];
+          _.each(allUsers, function(user) {
+            var team;
+            team = Number(user.team || 0);
+            console.log(user.team, team);
+            return teams[team].push(user);
+          });
           if (error) {
             next(error);
           }
           locals = {
             title: 'Users',
-            users: allUsers,
+            teams: teams,
             currentUser: currentUser
           };
           return renderWithLocals(locals, 'users/index', next, response);
@@ -376,6 +383,9 @@
         userHash = {};
         if (userParams.handle) {
           userHash.handle = userParams.handle;
+        }
+        if (userParams.team) {
+          userHash.team = userParams.team;
         }
         userHash.abuse = userParams.abuse !== '0';
         id = new db.bson_serializer.ObjectID(request.params.id);
@@ -477,6 +487,7 @@
         userHash.active = userParams.active !== '0';
         userHash.name = userParams.name;
         userHash.handle = userParams.handle;
+        userHash.team = Number(userParams.team || 0);
         id = new db.bson_serializer.ObjectID(request.params.id);
         return db.collection('users', function(error, users) {
           var options;

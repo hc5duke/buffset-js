@@ -202,10 +202,14 @@ app.get '/users', (request, response, next) ->
         users = _.sortBy users, (user) -> user.handle.toLowerCase()
         users.reverse()
       allUsers = _.flatten(allUsers).reverse()
-
       withCurrentUser request.session, (error, currentUser) ->
+        teams = [ [], [] ]
+        _.each allUsers, (user) ->
+          team = Number(user.team || 0)
+          console.log(user.team, team)
+          teams[team].push user
         next error if error
-        locals = title: 'Users', users: allUsers, currentUser: currentUser
+        locals = title: 'Users', teams: teams, currentUser: currentUser
         renderWithLocals locals, 'users/index', next, response
 
 
@@ -252,7 +256,8 @@ app.post '/users/:id', (request, response, next) ->
       userParams = request.body.user
       userHash = {}
       userHash.handle = userParams.handle if userParams.handle
-      userHash.abuse = userParams.abuse != '0'
+      userHash.team   = userParams.team   if userParams.team
+      userHash.abuse  = userParams.abuse != '0'
       id = new db.bson_serializer.ObjectID(request.params.id)
       db.collection 'users', (error, users) ->
         next error if error
@@ -296,8 +301,9 @@ app.post '/admin/users/:id', (request, response, next) ->
       userParams = request.body.user
       userHash = {}
       userHash.active = userParams.active != '0'
-      userHash.name = userParams.name
+      userHash.name   = userParams.name
       userHash.handle = userParams.handle
+      userHash.team   = Number(userParams.team || 0)
       id = new db.bson_serializer.ObjectID(request.params.id)
       db.collection 'users', (error, users) ->
         next error if error

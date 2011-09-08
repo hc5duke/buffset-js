@@ -37,6 +37,18 @@ input {
   background-repeat: no-repeat;
   text-align: center;
 }
+#prod {
+  width: 520px;
+  float: left;
+  border-right: 3px solid #0c7579;
+}
+#sales {
+  width: 220px;
+  float: right;
+}
+.clear {
+  clear: both;
+}
 #season-number-outside {
   position: relative;
 }
@@ -50,7 +62,7 @@ input {
 .text {
   padding: 170px 60px 0px;
   font-family: 'Walter Turncoat', cursive, arial;
-  font-size: 36px;
+  font-size: 30px;
   line-height: 32px;
 }
 .user {

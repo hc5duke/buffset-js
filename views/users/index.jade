@@ -7,32 +7,60 @@ html
       #season-number-outside
         #season-number 3
       #container
-        section#users.text
-          - each user in users
-            - myUser = (currentUser && user._id == String(currentUser._id))
-            - user_id = myUser ? 'current_user' : "user_" + user._id
-            .user(id=user_id)
-              .handle
-                a(href = '/users/' + user._id)= user.handle
-              - if (myUser)
-                .count#edit_current_user
-                  a(href = '#')= helpers.tallyize(user.buffsets.length)
-                .hidden#edit_current_user_form
-                  .center
-                    form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                      input(type="hidden", name="user[buffset_type]", value="pushup")
-                      input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
-                    form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                      input(type="hidden", name="user[buffset_type]", value="situp")
-                      input.btn.primary#user_submit(name="commit", type="submit", value="30 Sit-ups")
-                    form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                      input(type="hidden", name="user[buffset_type]", value="pullup")
-                      input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
-                  .clear
-                  input.btn#cancel_edit(type="submit", value="cancel")
-              - else
-                .count= helpers.tallyize(user.buffsets.length)
-
+        #users.text
+          section#prod
+            h3 Dev + Prod
+            - each user in teams[0]
+              - myUser = (currentUser && user._id == String(currentUser._id))
+              - user_id = myUser ? 'current_user' : "user_" + user._id
+              .user(id=user_id)
+                .handle
+                  a(href = '/users/' + user._id)= user.handle
+                - if (myUser)
+                  .count#edit_current_user
+                    a(href = '#')= helpers.tallyize(user.buffsets.length)
+                  .hidden#edit_current_user_form
+                    .center
+                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+                        input(type="hidden", name="user[buffset_type]", value="pushup")
+                        input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
+                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+                        input(type="hidden", name="user[buffset_type]", value="situp")
+                        input.btn.primary#user_submit(name="commit", type="submit", value="30 Sit-ups")
+                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+                        input(type="hidden", name="user[buffset_type]", value="pullup")
+                        input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
+                    .clear
+                    input.btn#cancel_edit(type="submit", value="cancel")
+                - else
+                  .count= helpers.tallyize(user.buffsets.length)
+          section#sales
+            h3 Sales
+            - each user in teams[1]
+              - myUser = (currentUser && user._id == String(currentUser._id))
+              - user_id = myUser ? 'current_user' : "user_" + user._id
+              .user(id=user_id)
+                .handle
+                  a(href = '/users/' + user._id)= user.handle
+                - if (myUser)
+                  .count#edit_current_user
+                    a(href = '#')= helpers.tallyize(user.buffsets.length)
+                  .hidden#edit_current_user_form
+                    .center
+                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+                        input(type="hidden", name="user[buffset_type]", value="pushup")
+                        input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
+                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+                        input(type="hidden", name="user[buffset_type]", value="situp")
+                        input.btn.primary#user_submit(name="commit", type="submit", value="30 Sit-ups")
+                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+                        input(type="hidden", name="user[buffset_type]", value="pullup")
+                        input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
+                    .clear
+                    input.btn#cancel_edit(type="submit", value="cancel")
+                - else
+                  .count= helpers.tallyize(user.buffsets.length)
+        .clear
     include ../includes/footer
     - if (currentUser)
       script
