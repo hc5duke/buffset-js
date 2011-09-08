@@ -532,8 +532,6 @@
     });
   });
   app.get('/chartz/sum', function(request, response, next) {
-    var series;
-    series = [];
     return withCurrentUser(request.session, function(error, currentUser) {
       return db.collection('users', function(error, users) {
         return users.find({
@@ -566,7 +564,7 @@
           date = earliest;
           dates = [];
           while (date <= latest) {
-            dates.push([1 + date.getUTCMonth(), '/', date.getUTCDate()].join(''));
+            dates.push([1 + date.getMonth(), '/', date.getDate()].join(''));
             date = new Date(date - 0 + 24 * 3600 * 1000);
           }
           data = [];
@@ -591,7 +589,60 @@
       });
     });
   });
-  app.get('/chartz/punch', function(request, response, next) {});
+  app.get('/chartz/punch', function(request, response, next) {
+    return withCurrentUser(request.session, function(error, currentUser) {
+      return db.collection('users', function(error, users) {
+        return users.find({
+          active: true
+        }).toArray(function(error, activeUsers) {
+          var chart_url, data, days, hours, i, locals, max, weekday, weekdays;
+          days = [];
+          i = 0;
+          _.times(7, function() {
+            var j;
+            days[i] = [];
+            j = 0;
+            _.times(24, function() {
+              days[i][j] = 0;
+              return j += 1;
+            });
+            return i += 1;
+          });
+          activeUsers = _.select(activeUsers, function(user) {
+            return _.each(user.buffsets, function(buffset) {
+              var created_at;
+              created_at = buffset.created_at;
+              return days[created_at.getDay()][created_at.getHours()] += 1;
+            });
+          });
+          data = _.flatten(days.slice(1, -1));
+          max = _.max(data);
+          _.times(24, function() {
+            return data.push('0');
+          });
+          hours = [];
+          weekdays = [];
+          weekday = 0;
+          _.times(5, function() {
+            var range;
+            range = _.range(24).join(',');
+            hours.push(range);
+            _.times(24, function() {
+              return weekdays.push(weekday);
+            });
+            return weekday += 1;
+          });
+          chart_url = ['https://chart.googleapis.com/chart?chs=800x300&chds=-1,24,-1,5,0,', max, '&chf=bg,s,efefef&chd=t:', hours.join(','), '|', weekdays.join(','), '|', data.join(','), "&chxt=x,y&chm=o,333333,1,1.0,25.0&chxl=0:||12am|1|2|3|4|5|6|7|8|9|10|11|12pm|1|2|3|4|5|6|7|8|9|10|11||1:|", "|Mon|Tue|Wed|Thr|Fri|&cht=s"].join('');
+          locals = {
+            title: 'Tapjoy Buffsets.js',
+            currentUser: currentUser,
+            chart_url: chart_url
+          };
+          return renderWithLocals(locals, 'chartz/punchcard', next, response);
+        });
+      });
+    });
+  });
   app.listen(port, function() {
     return console.log("Listening on " + port);
   });
