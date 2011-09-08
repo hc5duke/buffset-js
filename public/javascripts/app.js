@@ -33,7 +33,7 @@ var createChart = function(series) {
     },
     yAxis: {
       title: {
-        text: 'Total Pushups'
+        text: 'Total Buffsets'
       },
       min: 0,
       plotLines: [{
@@ -56,7 +56,7 @@ var createChart = function(series) {
     tooltip: {
       formatter: function() {
         return '<b>'+ this.series.name +'</b><br/>'+
-          Highcharts.dateFormat('%m/%d %H:%M', this.x) +': '+ this.y +' pushups (' + this.y/20 +' sets * 20)';
+          Highcharts.dateFormat('%m/%d %H:%M', this.x) +': '+ this.y +' buffsets';
       }
     },
     legend: {
@@ -93,7 +93,7 @@ var createStackedChart = function(categories, series) {
     },
     yAxis: {
       title: {
-        text: 'Total Pushups'
+        text: 'Total Buffsets'
       },
       labels: {
         formatter: function() {
@@ -116,8 +116,8 @@ var createStackedChart = function(categories, series) {
     tooltip: {
       formatter: function() {
         return '<b>' + this.series.name +'</b><br/>'+
-          this.x +': '+ this.y +' pushups (' + this.y/20 +' sets * 20)<br/>' +
-          '<b>Total</b><br/>' + this.total + ' pushups (' + this.percentage.toFixed(2) + '%)';
+          this.x +': '+ this.y +' buffsets<br/>' +
+          '<b>Total</b><br/>' + this.total + ' buffsets (' + this.percentage.toFixed(2) + '%)';
       }
     },
     legend: {
