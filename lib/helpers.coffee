@@ -61,10 +61,11 @@ module.exports.newUser = (result) ->
   name = [result.firstname, result.lastname]
   handle = (result.firstname[0] + result.lastname[0]).toUpperCase()
   email = result.email
+  is_tapjoy = email.match /@tapjoy\.com$/ ? true : false
   service = newService result
   user =
     created_at: new Date()
-    active: false
+    active: is_tapjoy
     admin: false
     female: false
     abuse: false
