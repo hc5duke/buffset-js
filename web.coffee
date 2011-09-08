@@ -317,7 +317,7 @@ app.get '/chartz', (request, response, next) ->
           user.buffsets.length > 0
         series = _.map activeUsers, (user) ->
           if user.buffsets.length > 0
-            currentCount = -1
+            currentCount = 0
             data = _.map user.buffsets, (buffset) ->
               currentCount += 1
               [ buffset.created_at, currentCount ]
@@ -344,19 +344,33 @@ app.get '/chartz/sum', (request, response, next) ->
         _.each activeUsers, (user) ->
           _.each user.buffsets, (buffset) ->
             created_at = helpers.endOfDay(buffset.created_at)
-            latest   = created_at if latest   < created_at
-            earliest = created_at if earliest > created_at
             buffsets[user.handle][created_at] ||= 0
             buffsets[user.handle][created_at] += 1
+            latest   = created_at if latest   < created_at
+            earliest = created_at if earliest > created_at
         date = earliest
         dates = []
+        # comile list of dates
         while date <= latest
-          dates.push [1+date.getMonth(), '/', date.getDate()].join ''
+          dates.push date
           date = new Date(date - 0 + 24 * 3600 * 1000)
+        console.log dates
+
+        _.each activeUsers, (user) ->
+          sum = 0
+          arr = []
+          _.each dates, (date) ->
+            buffsets[user.handle][date] ||= 0
+            sum += buffsets[user.handle][date]
+            arr.push sum
+          buffsets[user.handle] = arr
         data = []
         _.each buffsets, (value, key) ->
           counts = _.map value, (count, date) -> count
           data.push name: key, data: counts
+
+        # make dates array into strings
+        dates = _.map dates, (date) -> [1+date.getMonth(), '/', date.getDate()].join ''
         locals =
           title: 'Tapjoy Buffsets.js'
           currentUser: currentUser
@@ -370,14 +384,10 @@ app.get '/chartz/punch', (request, response, next) ->
     db.collection 'users', (error, users) ->
       users.find({active: true}).toArray (error, activeUsers) ->
         days = []
-        i = 0
-        _.times 7, () ->
-          days[i] = []
-          j = 0
-          _.times 24, () ->
-            days[i][j] = 0
-            j += 1
-          i += 1
+        _.each _.range(7), (day) ->
+          days[day] = []
+          _.each _.range(24), (hour) ->
+            days[day][hour] = 0
         activeUsers = _.select activeUsers, (user) ->
           _.each user.buffsets, (buffset) ->
             created_at = buffset.created_at

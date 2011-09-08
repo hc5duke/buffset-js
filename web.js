@@ -508,7 +508,7 @@
           series = _.map(activeUsers, function(user) {
             var currentCount, data;
             if (user.buffsets.length > 0) {
-              currentCount = -1;
+              currentCount = 0;
               data = _.map(user.buffsets, function(buffset) {
                 currentCount += 1;
                 return [buffset.created_at, currentCount];
@@ -551,22 +551,35 @@
             return _.each(user.buffsets, function(buffset) {
               var created_at, _base;
               created_at = helpers.endOfDay(buffset.created_at);
+              (_base = buffsets[user.handle])[created_at] || (_base[created_at] = 0);
+              buffsets[user.handle][created_at] += 1;
               if (latest < created_at) {
                 latest = created_at;
               }
               if (earliest > created_at) {
-                earliest = created_at;
+                return earliest = created_at;
               }
-              (_base = buffsets[user.handle])[created_at] || (_base[created_at] = 0);
-              return buffsets[user.handle][created_at] += 1;
             });
           });
           date = earliest;
           dates = [];
           while (date <= latest) {
-            dates.push([1 + date.getMonth(), '/', date.getDate()].join(''));
+            dates.push(date);
             date = new Date(date - 0 + 24 * 3600 * 1000);
           }
+          console.log(dates);
+          _.each(activeUsers, function(user) {
+            var arr, sum;
+            sum = 0;
+            arr = [];
+            _.each(dates, function(date) {
+              var _base;
+              (_base = buffsets[user.handle])[date] || (_base[date] = 0);
+              sum += buffsets[user.handle][date];
+              return arr.push(sum);
+            });
+            return buffsets[user.handle] = arr;
+          });
           data = [];
           _.each(buffsets, function(value, key) {
             var counts;
@@ -577,6 +590,9 @@
               name: key,
               data: counts
             });
+          });
+          dates = _.map(dates, function(date) {
+            return [1 + date.getMonth(), '/', date.getDate()].join('');
           });
           locals = {
             title: 'Tapjoy Buffsets.js',
@@ -595,18 +611,13 @@
         return users.find({
           active: true
         }).toArray(function(error, activeUsers) {
-          var chart_url, data, days, hours, i, locals, max, weekday, weekdays;
+          var chart_url, data, days, hours, locals, max, weekday, weekdays;
           days = [];
-          i = 0;
-          _.times(7, function() {
-            var j;
-            days[i] = [];
-            j = 0;
-            _.times(24, function() {
-              days[i][j] = 0;
-              return j += 1;
+          _.each(_.range(7), function(day) {
+            days[day] = [];
+            return _.each(_.range(24), function(hour) {
+              return days[day][hour] = 0;
             });
-            return i += 1;
           });
           activeUsers = _.select(activeUsers, function(user) {
             return _.each(user.buffsets, function(buffset) {
