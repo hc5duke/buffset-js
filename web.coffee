@@ -8,9 +8,14 @@ mongo = require 'mongodb'
 redis = require 'connect-redis'
 _ = require 'underscore'
 Pusher = require 'node-pusher'
-helpers = require './lib/helpers'
+Helpers = require './lib/helpers'
+User = require './lib/user'
 port = process.env.PORT || 4000
 relyingParty = null
+
+user = new User()
+user.method(11)
+console.log user.value1, user.value2
 
 pusher = null
 if process.env.PUSHER_URL
@@ -121,7 +126,7 @@ renderWithLocals = (locals, view, next, response) ->
         locals = _.extend locals,
           active_users_count: userData.activeUsersCount
           users_count: userData.usersCount
-          helpers: helpers
+          Helpers: Helpers
         view = 'views/' + view + '.jade'
         jade.renderFile view, {locals: locals}, (error, html) ->
           if error
@@ -146,7 +151,7 @@ app.get '/', (request, response, next) ->
 
 
 app.get '/services/signout', (request, response, next) ->
-  helpers.logOut(request.session)
+  Helpers.logOut(request.session)
   response.redirect '/'
 
 
@@ -170,11 +175,11 @@ app.get '/verify', (request, response, next) ->
         return
       db.collection 'users', (err, users) ->
         # 1: is there uid?
-        service = helpers.newService result
+        service = Helpers.newService result
         user = users.findOne 'services.uid': service.uid, (err, user) ->
           if user
             # log in user
-            helpers.logIn user, request.session
+            Helpers.logIn user, request.session
             response.redirect '/users/'
           else
             # 2: is there email?
@@ -185,11 +190,11 @@ app.get '/verify', (request, response, next) ->
                 users.update({_id: user._id}, {$push: {services: service}}, false, false)
               else
                 # 3: create user
-                user = helpers.newUser result
+                user = Helpers.newUser result
                 email = user.email
                 is_tapjoy = email.match /@tapjoy\.com$/ ? true : false
                 users.insert(user)
-              helpers.logIn user, request.session
+              Helpers.logIn user, request.session
               response.redirect '/users/' + user._id + '/edit'
 
 
@@ -210,7 +215,7 @@ app.get '/users', (request, response, next) ->
           teams[team].push user
           scores[team] += user.buffsets.length
         scores = _.map scores, (score) ->
-          helpers.tallyize(score)
+          Helpers.tallyize(score)
         next error if error
         locals = title: 'Users', teams: teams, scores: scores, currentUser: currentUser
         renderWithLocals locals, 'users/index', next, response
@@ -266,12 +271,12 @@ app.post '/users/:id', (request, response, next) ->
         next error if error
         updates = $set: userHash
         if userParams.buffset_type
-          buffset = helpers.newBuffset(request.params.id, userParams.buffset_type)
+          buffset = Helpers.newBuffset(request.params.id, userParams.buffset_type)
           updates['$push'] = buffsets: buffset
           if pusher
             users.findOne _id: id, (error, user) ->
               count = user.buffsets.length + 1
-              tally = helpers.tallyize(count)
+              tally = Helpers.tallyize(count)
               userData = id: user._id, name: user.name, count: count, tally: tally
               pusher.trigger channel, event, userData
         options = safe: true, multi: false, upsert: false
@@ -356,7 +361,7 @@ app.get '/chartz/sum', (request, response, next) ->
           buffsets[user.handle] = {}
         _.each activeUsers, (user) ->
           _.each user.buffsets, (buffset) ->
-            created_at = helpers.endOfDay(buffset.created_at)
+            created_at = Helpers.endOfDay(buffset.created_at)
             buffsets[user.handle][created_at] ||= 0
             buffsets[user.handle][created_at] += 1
             latest   = created_at if latest   < created_at

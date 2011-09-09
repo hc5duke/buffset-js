@@ -1,5 +1,5 @@
 (function() {
-  var Db, Pusher, RedisStore, Server, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extensions, helpers, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, withCurrentUser, withUserData, _;
+  var Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extensions, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, user, withCurrentUser, withUserData, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -10,9 +10,13 @@
   redis = require('connect-redis');
   _ = require('underscore');
   Pusher = require('node-pusher');
-  helpers = require('./lib/helpers');
+  Helpers = require('./lib/helpers');
+  User = require('./lib/user');
   port = process.env.PORT || 4000;
   relyingParty = null;
+  user = new User();
+  user.method(11);
+  console.log(user.value1, user.value2);
   pusher = null;
   if (process.env.PUSHER_URL) {
     pusherConfig = process.env.PUSHER_URL.split(/:|@|\//);
@@ -151,7 +155,7 @@
           locals = _.extend(locals, {
             active_users_count: userData.activeUsersCount,
             users_count: userData.usersCount,
-            helpers: helpers
+            Helpers: Helpers
           });
           view = 'views/' + view + '.jade';
           return jade.renderFile(view, {
@@ -190,7 +194,7 @@
     });
   });
   app.get('/services/signout', function(request, response, next) {
-    helpers.logOut(request.session);
+    Helpers.logOut(request.session);
     return response.redirect('/');
   });
   app.get('/authenticate', function(request, response) {
@@ -216,13 +220,13 @@
         return;
       }
       return db.collection('users', function(err, users) {
-        var service, user;
-        service = helpers.newService(result);
+        var service;
+        service = Helpers.newService(result);
         return user = users.findOne({
           'services.uid': service.uid
         }, function(err, user) {
           if (user) {
-            helpers.logIn(user, request.session);
+            Helpers.logIn(user, request.session);
             return response.redirect('/users/');
           } else {
             return users.findOne({
@@ -242,14 +246,14 @@
                   }
                 }, false, false);
               } else {
-                user = helpers.newUser(result);
+                user = Helpers.newUser(result);
                 email = user.email;
                 is_tapjoy = email.match(/@tapjoy\.com$/ != null ? /@tapjoy\.com$/ : {
                   "true": false
                 });
                 users.insert(user);
               }
-              helpers.logIn(user, request.session);
+              Helpers.logIn(user, request.session);
               return response.redirect('/users/' + user._id + '/edit');
             });
           }
@@ -286,7 +290,7 @@
             return scores[team] += user.buffsets.length;
           });
           scores = _.map(scores, function(score) {
-            return helpers.tallyize(score);
+            return Helpers.tallyize(score);
           });
           if (error) {
             next(error);
@@ -403,7 +407,7 @@
             $set: userHash
           };
           if (userParams.buffset_type) {
-            buffset = helpers.newBuffset(request.params.id, userParams.buffset_type);
+            buffset = Helpers.newBuffset(request.params.id, userParams.buffset_type);
             updates['$push'] = {
               buffsets: buffset
             };
@@ -413,7 +417,7 @@
               }, function(error, user) {
                 var count, tally, userData;
                 count = user.buffsets.length + 1;
-                tally = helpers.tallyize(count);
+                tally = Helpers.tallyize(count);
                 userData = {
                   id: user._id,
                   name: user.name,
@@ -581,7 +585,7 @@
           _.each(activeUsers, function(user) {
             return _.each(user.buffsets, function(buffset) {
               var created_at, _base;
-              created_at = helpers.endOfDay(buffset.created_at);
+              created_at = Helpers.endOfDay(buffset.created_at);
               (_base = buffsets[user.handle])[created_at] || (_base[created_at] = 0);
               buffsets[user.handle][created_at] += 1;
               if (latest < created_at) {
