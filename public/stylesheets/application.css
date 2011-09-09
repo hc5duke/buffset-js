@@ -38,12 +38,12 @@ input {
   text-align: center;
 }
 #prod {
-  width: 520px;
+  width: 475px;
   float: left;
   border-right: 3px solid #0c7579;
 }
 #sales {
-  width: 220px;
+  width: 275px;
   float: right;
 }
 .clear {
