@@ -13,11 +13,11 @@ User = require './lib/user'
 port = process.env.PORT || 4000
 relyingParty = null
 
-user = new User()
-user.method(11)
-console.log user.value1, user.value2
-
 pusher = null
+channel = 'test_channel'
+event = 'my_event'
+push = (data) ->
+  pusher.trigger channel, event, data if pusher
 if process.env.PUSHER_URL
   pusherConfig = process.env.PUSHER_URL.split(/:|@|\//)
   pusher = new Pusher
@@ -26,8 +26,6 @@ if process.env.PUSHER_URL
     secret: pusherConfig[4]
 else
   console.log "WARNING: no Pusher"
-channel = 'test_channel'
-event = 'my_event'
 
 extensions = [
   new openid.AttributeExchange
@@ -85,6 +83,7 @@ app.configure 'production', ->
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
+User.setDb db
 db.open (err, db) ->
   if !err
     console.log "MongoDB connected"
@@ -97,55 +96,27 @@ db.open (err, db) ->
   else
     console.log err
 
-withCurrentUser = (session, callback) ->
-  id = new db.bson_serializer.ObjectID(session.userId)
-  db.collection 'users', (error, users) ->
-    if error
-      callback error
-    else
-      users.findOne _id: id, (error, currentUser) ->
-        callback error, currentUser || false
-
-withUserData = (users, callback) ->
-  users.count {active: true}, (error, activeUsersCount) ->
-    if !error
-      users.count {}, (error, usersCount) ->
-        if !error
-          callback null,
-            activeUsersCount: activeUsersCount
-            usersCount: usersCount
-        else
-          callback error
-    else
-      callback error
-
 renderWithLocals = (locals, view, next, response) ->
-  db.collection 'users', (error, users) ->
-    withUserData users, (error, userData) ->
-      if !error
-        locals = _.extend locals,
-          active_users_count: userData.activeUsersCount
-          users_count: userData.usersCount
-          Helpers: Helpers
-        view = 'views/' + view + '.jade'
-        jade.renderFile view, {locals: locals}, (error, html) ->
-          if error
-            next(error)
-          else
-            response.send(html)
+  User.withCounts (userData) ->
+    locals = _.extend locals,
+      activeUsersCount: userData.activeCount
+      usersCount: userData.count
+      Helpers: Helpers
+    view = 'views/' + view + '.jade'
+    jade.renderFile view, {locals: locals}, (error, html) ->
+      if error
+        next error
       else
-        next(error)
+        response.send(html)
 
-authorizedToEdit = (currentUser, request, adminOnly) ->
-  currentUser.admin || (!adminOnly && request.params.id == String(currentUser._id))
-
+authorizedToEdit = (currentUser, authorizedUserId, adminOnly) ->
+  currentUser.admin || (!adminOnly && authorizedUserId == String(currentUser._id))
 
 app.get '/', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
+  User.withCurrentUser request.session, (currentUser) ->
     if currentUser
       response.redirect '/users/'
     else
-      next error if error
       locals = title: 'Tapjoy Buffsets.js', currentUser: currentUser
       renderWithLocals locals, 'index', next, response
 
@@ -168,84 +139,62 @@ app.get '/authenticate', (request, response) ->
 
 
 app.get '/verify', (request, response, next) ->
-  relyingParty.verifyAssertion request,
-    (error, result) ->
-      if error || !result.authenticated
-        response.send 'Failure :('
-        return
-      db.collection 'users', (err, users) ->
-        # 1: is there uid?
-        service = Helpers.newService result
-        user = users.findOne 'services.uid': service.uid, (err, user) ->
+  relyingParty.verifyAssertion request, (error, result) ->
+    if error || !result.authenticated
+      response.send 'Failure :('
+      return
+    # 1: is there uid?
+    service = Helpers.newService result
+    User.findOne 'services.uid': service.uid, (user) ->
+      if user
+        # log in user
+        Helpers.logIn user, request.session
+        response.redirect '/users/'
+      else
+        # 2: is there email?
+        User.findOne email: result.email, (user) ->
           if user
-            # log in user
-            Helpers.logIn user, request.session
-            response.redirect '/users/'
+            users.update({_id: user._id}, {$push: {services: service}})
           else
-            # 2: is there email?
-            users.findOne email: result.email, (err, user) ->
-              next(err) if err
-              if user
-                user.services ||= []
-                users.update({_id: user._id}, {$push: {services: service}}, false, false)
-              else
-                # 3: create user
-                user = Helpers.newUser result
-                email = user.email
-                is_tapjoy = email.match /@tapjoy\.com$/ ? true : false
-                users.insert(user)
-              Helpers.logIn user, request.session
-              response.redirect '/users/' + user._id + '/edit'
+            # 3: create user
+            # TODO: refactor
+            user = Helpers.newUser result
+            email = user.email
+            is_tapjoy = email.match /@tapjoy\.com$/ ? true : false
+            users.insert(user)
+          Helpers.logIn user, request.session
+          response.redirect '/users/' + user._id + '/edit'
 
 
 app.get '/users', (request, response, next) ->
-  db.collection 'users', (error, users) ->
-    users.find( active: true ).toArray (error, allUsers) ->
-      next(error) if error
-      allUsers = _.groupBy allUsers, (user) -> user.buffsets.length
-      allUsers = _.map allUsers, (users) ->
-        users = _.sortBy users, (user) -> user.handle.toLowerCase()
-        users.reverse()
-      allUsers = _.flatten(allUsers).reverse()
-      withCurrentUser request.session, (error, currentUser) ->
-        teams = [[], []]
-        scores = [0, 0]
-        _.each allUsers, (user) ->
-          team = Number(user.team || 0)
-          teams[team].push user
-          scores[team] += user.buffsets.length
-        scores = _.map scores, (score) ->
-          Helpers.tallyize(score)
-        next error if error
-        locals = title: 'Users', teams: teams, scores: scores, currentUser: currentUser
-        renderWithLocals locals, 'users/index', next, response
+  User.findAll active: true, (allUsers) ->
+    allUsers = _.groupBy allUsers, (user) -> user.buffsets.length
+    allUsers = _.map allUsers, (users) ->
+      users = _.sortBy users, (user) -> user.handle.toLowerCase()
+      users.reverse()
+    allUsers = _.flatten(allUsers).reverse()
+    User.withCurrentUser request.session, (currentUser) ->
+      teams = [[], []]
+      scores = [0, 0]
+      _.each allUsers, (user) ->
+        teams[user.team].push user
+        scores[user.team] += user.buffsets.length
+      locals = title: 'Users', teams: teams, scores: scores, currentUser: currentUser
+      renderWithLocals locals, 'users/index', next, response
 
 
 app.get '/users/:id', (request, response, next) ->
-  db.collection 'users', (error, users) ->
-    next error if error
-    id = new db.bson_serializer.ObjectID(request.params.id)
-    users.findOne _id: id, (error, user) ->
-      next error if error
-      withCurrentUser request.session, (error, currentUser) ->
-        next error if error
-        series = []
-        if user.buffsets.length > 0
-          currentCount = -1
-          data = _.map user.buffsets, (buffset) ->
-            currentCount += 1
-            [ buffset.created_at, currentCount ]
-          series = [{ name: user.handle, data: data, multiplier: user.multiplier }]
-        locals =
-          title: 'Competitive Chartz'
-          currentUser: currentUser
-          series: series
-        renderWithLocals locals, 'chartz/competitive', next, response
+  User.findOne _id: request.params.id, (user) ->
+    User.withCurrentUser request.session, (currentUser) ->
+      locals =
+        title: 'Competitive Chartz'
+        currentUser: currentUser
+        series: [ user.buffsetData() ]
+      renderWithLocals locals, 'chartz/competitive', next, response
 
 app.get '/users/:id/edit', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
-    next error if error
-    if authorizedToEdit(currentUser, request)
+  User.withCurrentUser request.session, (currentUser) ->
+    if authorizedToEdit(currentUser, request.params.id)
       db.collection 'users', (error, users) ->
         next error if error
         id = new db.bson_serializer.ObjectID(request.params.id)
@@ -257,40 +206,9 @@ app.get '/users/:id/edit', (request, response, next) ->
       response.redirect '/users/' + request.params.id
 
 
-app.post '/users/:id', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
-    next error if error
-    if authorizedToEdit(currentUser, request)
-      userParams = request.body.user
-      userHash = {}
-      userHash.handle = userParams.handle if userParams.handle
-      userHash.team   = userParams.team   if userParams.team
-      userHash.abuse  = userParams.abuse != '0'
-      id = new db.bson_serializer.ObjectID(request.params.id)
-      db.collection 'users', (error, users) ->
-        next error if error
-        updates = $set: userHash
-        if userParams.buffset_type
-          buffset = Helpers.newBuffset(request.params.id, userParams.buffset_type)
-          updates['$push'] = buffsets: buffset
-          if pusher
-            users.findOne _id: id, (error, user) ->
-              count = user.buffsets.length + 1
-              tally = Helpers.tallyize(count)
-              userData = id: user._id, name: user.name, count: count, tally: tally
-              pusher.trigger channel, event, userData
-        options = safe: true, multi: false, upsert: false
-        users.update {_id: id}, updates, options, (error) ->
-          next error if error
-          response.redirect '/users'
-    else
-      response.redirect 'back'
-
-
 app.get '/admin/users', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
-    next error if error
-    if authorizedToEdit(currentUser, request)
+  User.withCurrentUser request.session, (currentUser) ->
+    if authorizedToEdit(currentUser, '', true)
       db.collection 'users', (error, users) ->
         users.find({active: {$ne: true}}).toArray (error, inactiveUsers) ->
           next(error) if error
@@ -302,9 +220,19 @@ app.get '/admin/users', (request, response, next) ->
       response.redirect '/users'
 
 
+app.post '/users/:id', (request, response, next) ->
+  User.withCurrentUser request.session, (currentUser) ->
+    if authorizedToEdit(currentUser, request.params.id)
+      currentUser.update request.body.user, (error) ->
+        if request.body.user.buffset_type
+          push currentUser.pusherData(1)
+        response.redirect '/users'
+    else
+      response.redirect 'back'
+
+
 app.post '/admin/users/:id', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
-    next error if error
+  User.withCurrentUser request.session, (currentUser) ->
     if currentUser.admin
       userParams = request.body.user
       userHash = {}
@@ -324,7 +252,7 @@ app.post '/admin/users/:id', (request, response, next) ->
 
 
 app.get '/chartz', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
+  User.withCurrentUser request.session, (currentUser) ->
     db.collection 'users', (error, users) ->
       users.find({active: true}).toArray (error, activeUsers) ->
         activeUsers = _.select activeUsers, (user) ->
@@ -347,7 +275,7 @@ app.get '/chartz', (request, response, next) ->
 
 
 app.get '/chartz/sum', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
+  User.withCurrentUser request.session, (currentUser) ->
     db.collection 'users', (error, users) ->
       users.find({active: true}).toArray (error, activeUsers) ->
         activeUsers = _.select activeUsers, (user) ->
@@ -397,7 +325,7 @@ app.get '/chartz/sum', (request, response, next) ->
 
 
 app.get '/chartz/punch', (request, response, next) ->
-  withCurrentUser request.session, (error, currentUser) ->
+  User.withCurrentUser request.session, (currentUser) ->
     db.collection 'users', (error, users) ->
       users.find({active: true}).toArray (error, activeUsers) ->
         days = []

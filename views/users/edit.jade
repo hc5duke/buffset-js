@@ -16,7 +16,7 @@ html
                 input#user_email.xlarge(type='email', disabled='disabled', value=user.email, name='user[email]')
               .clearfix
                 label(value='user_handle') Handle
-                input#user_handle.xlarge(type='text', value=user.handle, name='user[handle]')
+                input#user_handle.xlarge(type='text', value=user.handle, name='user[handle]', maxlength=8)
               .clearfix
                 label(value='user_abuse') Abusive language?
                 input#user_abuse(type="hidden", name="user[abuse]", value="0")

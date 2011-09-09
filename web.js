@@ -1,5 +1,5 @@
 (function() {
-  var Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extensions, jade, mongo, openid, port, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, user, withCurrentUser, withUserData, _;
+  var Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extensions, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -14,10 +14,14 @@
   User = require('./lib/user');
   port = process.env.PORT || 4000;
   relyingParty = null;
-  user = new User();
-  user.method(11);
-  console.log(user.value1, user.value2);
   pusher = null;
+  channel = 'test_channel';
+  event = 'my_event';
+  push = function(data) {
+    if (pusher) {
+      return pusher.trigger(channel, event, data);
+    }
+  };
   if (process.env.PUSHER_URL) {
     pusherConfig = process.env.PUSHER_URL.split(/:|@|\//);
     pusher = new Pusher({
@@ -28,8 +32,6 @@
   } else {
     console.log("WARNING: no Pusher");
   }
-  channel = 'test_channel';
-  event = 'my_event';
   extensions = [
     new openid.AttributeExchange({
       "http://axschema.org/contact/email": "required",
@@ -97,6 +99,7 @@
     auto_reconnect: true
   });
   db = new Db(dbName, server);
+  User.setDb(db);
   db.open(function(err, db) {
     if (!err) {
       console.log("MongoDB connected");
@@ -113,78 +116,34 @@
       return console.log(err);
     }
   });
-  withCurrentUser = function(session, callback) {
-    var id;
-    id = new db.bson_serializer.ObjectID(session.userId);
-    return db.collection('users', function(error, users) {
-      if (error) {
-        return callback(error);
-      } else {
-        return users.findOne({
-          _id: id
-        }, function(error, currentUser) {
-          return callback(error, currentUser || false);
-        });
-      }
-    });
-  };
-  withUserData = function(users, callback) {
-    return users.count({
-      active: true
-    }, function(error, activeUsersCount) {
-      if (!error) {
-        return users.count({}, function(error, usersCount) {
-          if (!error) {
-            return callback(null, {
-              activeUsersCount: activeUsersCount,
-              usersCount: usersCount
-            });
-          } else {
-            return callback(error);
-          }
-        });
-      } else {
-        return callback(error);
-      }
-    });
-  };
   renderWithLocals = function(locals, view, next, response) {
-    return db.collection('users', function(error, users) {
-      return withUserData(users, function(error, userData) {
-        if (!error) {
-          locals = _.extend(locals, {
-            active_users_count: userData.activeUsersCount,
-            users_count: userData.usersCount,
-            Helpers: Helpers
-          });
-          view = 'views/' + view + '.jade';
-          return jade.renderFile(view, {
-            locals: locals
-          }, function(error, html) {
-            if (error) {
-              return next(error);
-            } else {
-              return response.send(html);
-            }
-          });
-        } else {
+    return User.withCounts(function(userData) {
+      locals = _.extend(locals, {
+        activeUsersCount: userData.activeCount,
+        usersCount: userData.count,
+        Helpers: Helpers
+      });
+      view = 'views/' + view + '.jade';
+      return jade.renderFile(view, {
+        locals: locals
+      }, function(error, html) {
+        if (error) {
           return next(error);
+        } else {
+          return response.send(html);
         }
       });
     });
   };
-  authorizedToEdit = function(currentUser, request, adminOnly) {
-    return currentUser.admin || (!adminOnly && request.params.id === String(currentUser._id));
+  authorizedToEdit = function(currentUser, authorizedUserId, adminOnly) {
+    return currentUser.admin || (!adminOnly && authorizedUserId === String(currentUser._id));
   };
   app.get('/', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
+    return User.withCurrentUser(request.session, function(currentUser) {
       var locals;
       if (currentUser) {
         return response.redirect('/users/');
       } else {
-        if (error) {
-          next(error);
-        }
         locals = {
           title: 'Tapjoy Buffsets.js',
           currentUser: currentUser
@@ -215,146 +174,96 @@
   });
   app.get('/verify', function(request, response, next) {
     return relyingParty.verifyAssertion(request, function(error, result) {
+      var service;
       if (error || !result.authenticated) {
         response.send('Failure :(');
         return;
       }
-      return db.collection('users', function(err, users) {
-        var service;
-        service = Helpers.newService(result);
-        return user = users.findOne({
-          'services.uid': service.uid
-        }, function(err, user) {
-          if (user) {
+      service = Helpers.newService(result);
+      return User.findOne({
+        'services.uid': service.uid
+      }, function(user) {
+        if (user) {
+          Helpers.logIn(user, request.session);
+          return response.redirect('/users/');
+        } else {
+          return User.findOne({
+            email: result.email
+          }, function(user) {
+            var email, is_tapjoy;
+            if (user) {
+              users.update({
+                _id: user._id
+              }, {
+                $push: {
+                  services: service
+                }
+              });
+            } else {
+              user = Helpers.newUser(result);
+              email = user.email;
+              is_tapjoy = email.match(/@tapjoy\.com$/ != null ? /@tapjoy\.com$/ : {
+                "true": false
+              });
+              users.insert(user);
+            }
             Helpers.logIn(user, request.session);
-            return response.redirect('/users/');
-          } else {
-            return users.findOne({
-              email: result.email
-            }, function(err, user) {
-              var email, is_tapjoy;
-              if (err) {
-                next(err);
-              }
-              if (user) {
-                user.services || (user.services = []);
-                users.update({
-                  _id: user._id
-                }, {
-                  $push: {
-                    services: service
-                  }
-                }, false, false);
-              } else {
-                user = Helpers.newUser(result);
-                email = user.email;
-                is_tapjoy = email.match(/@tapjoy\.com$/ != null ? /@tapjoy\.com$/ : {
-                  "true": false
-                });
-                users.insert(user);
-              }
-              Helpers.logIn(user, request.session);
-              return response.redirect('/users/' + user._id + '/edit');
-            });
-          }
-        });
+            return response.redirect('/users/' + user._id + '/edit');
+          });
+        }
       });
     });
   });
   app.get('/users', function(request, response, next) {
-    return db.collection('users', function(error, users) {
-      return users.find({
-        active: true
-      }).toArray(function(error, allUsers) {
-        if (error) {
-          next(error);
-        }
-        allUsers = _.groupBy(allUsers, function(user) {
-          return user.buffsets.length;
+    return User.findAll({
+      active: true
+    }, function(allUsers) {
+      allUsers = _.groupBy(allUsers, function(user) {
+        return user.buffsets.length;
+      });
+      allUsers = _.map(allUsers, function(users) {
+        users = _.sortBy(users, function(user) {
+          return user.handle.toLowerCase();
         });
-        allUsers = _.map(allUsers, function(users) {
-          users = _.sortBy(users, function(user) {
-            return user.handle.toLowerCase();
-          });
-          return users.reverse();
+        return users.reverse();
+      });
+      allUsers = _.flatten(allUsers).reverse();
+      return User.withCurrentUser(request.session, function(currentUser) {
+        var locals, scores, teams;
+        teams = [[], []];
+        scores = [0, 0];
+        _.each(allUsers, function(user) {
+          teams[user.team].push(user);
+          return scores[user.team] += user.buffsets.length;
         });
-        allUsers = _.flatten(allUsers).reverse();
-        return withCurrentUser(request.session, function(error, currentUser) {
-          var locals, scores, teams;
-          teams = [[], []];
-          scores = [0, 0];
-          _.each(allUsers, function(user) {
-            var team;
-            team = Number(user.team || 0);
-            teams[team].push(user);
-            return scores[team] += user.buffsets.length;
-          });
-          scores = _.map(scores, function(score) {
-            return Helpers.tallyize(score);
-          });
-          if (error) {
-            next(error);
-          }
-          locals = {
-            title: 'Users',
-            teams: teams,
-            scores: scores,
-            currentUser: currentUser
-          };
-          return renderWithLocals(locals, 'users/index', next, response);
-        });
+        locals = {
+          title: 'Users',
+          teams: teams,
+          scores: scores,
+          currentUser: currentUser
+        };
+        return renderWithLocals(locals, 'users/index', next, response);
       });
     });
   });
   app.get('/users/:id', function(request, response, next) {
-    return db.collection('users', function(error, users) {
-      var id;
-      if (error) {
-        next(error);
-      }
-      id = new db.bson_serializer.ObjectID(request.params.id);
-      return users.findOne({
-        _id: id
-      }, function(error, user) {
-        if (error) {
-          next(error);
-        }
-        return withCurrentUser(request.session, function(error, currentUser) {
-          var currentCount, data, locals, series;
-          if (error) {
-            next(error);
-          }
-          series = [];
-          if (user.buffsets.length > 0) {
-            currentCount = -1;
-            data = _.map(user.buffsets, function(buffset) {
-              currentCount += 1;
-              return [buffset.created_at, currentCount];
-            });
-            series = [
-              {
-                name: user.handle,
-                data: data,
-                multiplier: user.multiplier
-              }
-            ];
-          }
-          locals = {
-            title: 'Competitive Chartz',
-            currentUser: currentUser,
-            series: series
-          };
-          return renderWithLocals(locals, 'chartz/competitive', next, response);
-        });
+    return User.findOne({
+      _id: request.params.id
+    }, function(user) {
+      return User.withCurrentUser(request.session, function(currentUser) {
+        var locals;
+        locals = {
+          title: 'Competitive Chartz',
+          currentUser: currentUser,
+          series: [user.buffsetData()]
+        };
+        return renderWithLocals(locals, 'chartz/competitive', next, response);
       });
     });
   });
   app.get('/users/:id/edit', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
-      if (error) {
-        next(error);
-      }
-      if (authorizedToEdit(currentUser, request)) {
+    return User.withCurrentUser(request.session, function(currentUser) {
+      if (authorizedToEdit(currentUser, request.params.id)) {
         return db.collection('users', function(error, users) {
           var id;
           if (error) {
@@ -381,78 +290,9 @@
       }
     });
   });
-  app.post('/users/:id', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
-      var id, userHash, userParams;
-      if (error) {
-        next(error);
-      }
-      if (authorizedToEdit(currentUser, request)) {
-        userParams = request.body.user;
-        userHash = {};
-        if (userParams.handle) {
-          userHash.handle = userParams.handle;
-        }
-        if (userParams.team) {
-          userHash.team = userParams.team;
-        }
-        userHash.abuse = userParams.abuse !== '0';
-        id = new db.bson_serializer.ObjectID(request.params.id);
-        return db.collection('users', function(error, users) {
-          var buffset, options, updates;
-          if (error) {
-            next(error);
-          }
-          updates = {
-            $set: userHash
-          };
-          if (userParams.buffset_type) {
-            buffset = Helpers.newBuffset(request.params.id, userParams.buffset_type);
-            updates['$push'] = {
-              buffsets: buffset
-            };
-            if (pusher) {
-              users.findOne({
-                _id: id
-              }, function(error, user) {
-                var count, tally, userData;
-                count = user.buffsets.length + 1;
-                tally = Helpers.tallyize(count);
-                userData = {
-                  id: user._id,
-                  name: user.name,
-                  count: count,
-                  tally: tally
-                };
-                return pusher.trigger(channel, event, userData);
-              });
-            }
-          }
-          options = {
-            safe: true,
-            multi: false,
-            upsert: false
-          };
-          return users.update({
-            _id: id
-          }, updates, options, function(error) {
-            if (error) {
-              next(error);
-            }
-            return response.redirect('/users');
-          });
-        });
-      } else {
-        return response.redirect('back');
-      }
-    });
-  });
   app.get('/admin/users', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
-      if (error) {
-        next(error);
-      }
-      if (authorizedToEdit(currentUser, request)) {
+    return User.withCurrentUser(request.session, function(currentUser) {
+      if (authorizedToEdit(currentUser, '', true)) {
         return db.collection('users', function(error, users) {
           return users.find({
             active: {
@@ -484,12 +324,23 @@
       }
     });
   });
-  app.post('/admin/users/:id', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
-      var id, userHash, userParams;
-      if (error) {
-        next(error);
+  app.post('/users/:id', function(request, response, next) {
+    return User.withCurrentUser(request.session, function(currentUser) {
+      if (authorizedToEdit(currentUser, request.params.id)) {
+        return currentUser.update(request.body.user, function(error) {
+          if (request.body.user.buffset_type) {
+            push(currentUser.pusherData(1));
+          }
+          return response.redirect('/users');
+        });
+      } else {
+        return response.redirect('back');
       }
+    });
+  });
+  app.post('/admin/users/:id', function(request, response, next) {
+    return User.withCurrentUser(request.session, function(currentUser) {
+      var id, userHash, userParams;
       if (currentUser.admin) {
         userParams = request.body.user;
         userHash = {};
@@ -525,7 +376,7 @@
     });
   });
   app.get('/chartz', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
+    return User.withCurrentUser(request.session, function(currentUser) {
       return db.collection('users', function(error, users) {
         return users.find({
           active: true
@@ -564,7 +415,7 @@
     });
   });
   app.get('/chartz/sum', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
+    return User.withCurrentUser(request.session, function(currentUser) {
       return db.collection('users', function(error, users) {
         return users.find({
           active: true
@@ -640,7 +491,7 @@
     });
   });
   app.get('/chartz/punch', function(request, response, next) {
-    return withCurrentUser(request.session, function(error, currentUser) {
+    return User.withCurrentUser(request.session, function(currentUser) {
       return db.collection('users', function(error, users) {
         return users.find({
           active: true
