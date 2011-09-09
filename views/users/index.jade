@@ -9,7 +9,7 @@ html
       #container
         #users.text
           section#prod
-            h3 Dev + Prod
+            h3 Dev + Prod (#{scores[0]})
             - each user in teams[0]
               - myUser = (currentUser && user._id == String(currentUser._id))
               - user_id = myUser ? 'current_user' : "user_" + user._id
@@ -35,7 +35,7 @@ html
                 - else
                   .count= helpers.tallyize(user.buffsets.length)
           section#sales
-            h3 Sales
+            h3 Sales (#{scores[1]})
             - each user in teams[1]
               - myUser = (currentUser && user._id == String(currentUser._id))
               - user_id = myUser ? 'current_user' : "user_" + user._id

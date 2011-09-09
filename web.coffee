@@ -203,13 +203,16 @@ app.get '/users', (request, response, next) ->
         users.reverse()
       allUsers = _.flatten(allUsers).reverse()
       withCurrentUser request.session, (error, currentUser) ->
-        teams = [ [], [] ]
+        teams = [[], []]
+        scores = [0, 0]
         _.each allUsers, (user) ->
           team = Number(user.team || 0)
-          console.log(user.team, team)
           teams[team].push user
+          scores[team] += user.buffsets.length
+        scores = _.map scores, (score) ->
+          helpers.tallyize(score)
         next error if error
-        locals = title: 'Users', teams: teams, currentUser: currentUser
+        locals = title: 'Users', teams: teams, scores: scores, currentUser: currentUser
         renderWithLocals locals, 'users/index', next, response
 
 

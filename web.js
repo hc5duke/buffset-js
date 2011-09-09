@@ -276,13 +276,17 @@
         });
         allUsers = _.flatten(allUsers).reverse();
         return withCurrentUser(request.session, function(error, currentUser) {
-          var locals, teams;
+          var locals, scores, teams;
           teams = [[], []];
+          scores = [0, 0];
           _.each(allUsers, function(user) {
             var team;
             team = Number(user.team || 0);
-            console.log(user.team, team);
-            return teams[team].push(user);
+            teams[team].push(user);
+            return scores[team] += user.buffsets.length;
+          });
+          scores = _.map(scores, function(score) {
+            return helpers.tallyize(score);
           });
           if (error) {
             next(error);
@@ -290,6 +294,7 @@
           locals = {
             title: 'Users',
             teams: teams,
+            scores: scores,
             currentUser: currentUser
           };
           return renderWithLocals(locals, 'users/index', next, response);
