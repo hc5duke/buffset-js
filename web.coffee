@@ -169,11 +169,10 @@ app.get '/users', (request, response, next) ->
       users.reverse()
     allUsers = _.flatten(allUsers).reverse()
     User.withCurrentUser request.session, (currentUser) ->
-      teams = [[], []]
       scores = [0, 0]
-      _.each allUsers, (user) ->
-        teams[user.team].push user
+      teams = _.groupBy allUsers, (user) ->
         scores[user.team] += user.buffsets.length
+        user.team
       locals = title: 'Users', teams: teams, scores: scores, currentUser: currentUser
       renderWithLocals locals, 'users/index', next, response
 

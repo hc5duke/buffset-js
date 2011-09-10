@@ -225,11 +225,10 @@
       allUsers = _.flatten(allUsers).reverse();
       return User.withCurrentUser(request.session, function(currentUser) {
         var locals, scores, teams;
-        teams = [[], []];
         scores = [0, 0];
-        _.each(allUsers, function(user) {
-          teams[user.team].push(user);
-          return scores[user.team] += user.buffsets.length;
+        teams = _.groupBy(allUsers, function(user) {
+          scores[user.team] += user.buffsets.length;
+          return user.team;
         });
         locals = {
           title: 'Users',
