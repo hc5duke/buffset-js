@@ -71,18 +71,13 @@
     return relyingParty = new openid.RelyingParty('http://dev:' + port + '/verify', null, false, false, extensions);
   });
   app.configure('production', function() {
-    var arr, oneYear, redisConfig;
+    var oneYear, redisConfig, x, _ref;
     oneYear = 31557600000;
     app.use(express.static(__dirname + '/public', {
       maxAge: oneYear
     }));
     app.use(express.errorHandler());
-    arr = (process.env.MONGOHQ_URL || '').split(/:|@|\//);
-    dbUser = arr[3];
-    dbPass = arr[4];
-    dbHost = arr[5];
-    dbPort = arr[6];
-    dbName = arr[7];
+    _ref = (process.env.MONGOHQ_URL || '').split(/:|@|\//), x = _ref[0], x = _ref[1], x = _ref[2], dbUser = _ref[3], dbPass = _ref[4], dbHost = _ref[5], dbPort = _ref[6], dbName = _ref[7];
     redisConfig = (process.env.REDISTOGO_URL || '').split(/:|@|\//);
     app.use(express.session({
       secret: "keyboard cat",

@@ -65,12 +65,7 @@ app.configure 'production', ->
   oneYear = 31557600000
   app.use express.static __dirname + '/public', maxAge: oneYear
   app.use express.errorHandler()
-  arr = (process.env.MONGOHQ_URL||'').split(/:|@|\//)
-  dbUser = arr[3]
-  dbPass = arr[4]
-  dbHost = arr[5]
-  dbPort = arr[6]
-  dbName = arr[7]
+  [x, x, x, dbUser, dbPass, dbHost, dbPort, dbName] = (process.env.MONGOHQ_URL||'').split(/:|@|\//)
   redisConfig = (process.env.REDISTOGO_URL||'').split(/:|@|\//)
   app.use express.session
     secret: "keyboard cat"
