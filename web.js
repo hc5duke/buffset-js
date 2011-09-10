@@ -293,30 +293,22 @@
   app.get('/admin/users', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
       if (authorizedToEdit(currentUser, '', true)) {
-        return db.collection('users', function(error, users) {
-          return users.find({
+        return User.findAll({
+          active: true
+        }, function(activeUsers) {
+          return User.findAll({
             active: {
               $ne: true
             }
-          }).toArray(function(error, inactiveUsers) {
-            if (error) {
-              next(error);
-            }
-            return users.find({
-              active: true
-            }).toArray(function(error, activeUsers) {
-              var locals;
-              if (error) {
-                next(error);
-              }
-              locals = {
-                title: 'Users',
-                activeUsers: activeUsers,
-                inactiveUsers: inactiveUsers,
-                currentUser: currentUser
-              };
-              return renderWithLocals(locals, 'admin/users/index', next, response);
-            });
+          }, function(inactiveUsers) {
+            var locals;
+            locals = {
+              title: 'Users',
+              activeUsers: activeUsers,
+              inactiveUsers: inactiveUsers,
+              currentUser: currentUser
+            };
+            return renderWithLocals(locals, 'admin/users/index', next, response);
           });
         });
       } else {
@@ -327,7 +319,7 @@
   app.post('/users/:id', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
       if (authorizedToEdit(currentUser, request.params.id)) {
-        return currentUser.update(request.body.user, function(error) {
+        return currentUser.update(request.body.user, false, function(error) {
           if (request.body.user.buffset_type) {
             push(currentUser.pusherData(1));
           }
@@ -340,39 +332,15 @@
   });
   app.post('/admin/users/:id', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
-      var id, userHash, userParams;
-      if (currentUser.admin) {
-        userParams = request.body.user;
-        userHash = {};
-        userHash.active = userParams.active !== '0';
-        userHash.name = userParams.name;
-        userHash.handle = userParams.handle;
-        userHash.team = Number(userParams.team || 0);
-        id = new db.bson_serializer.ObjectID(request.params.id);
-        return db.collection('users', function(error, users) {
-          var options;
-          if (error) {
-            next(error);
-          }
-          options = {
-            safe: true,
-            multi: false,
-            upsert: false
-          };
-          return users.update({
-            _id: id
-          }, {
-            $set: userHash
-          }, options, function(error) {
-            if (error) {
-              next(error);
-            }
-            return response.redirect('back');
-          });
-        });
-      } else {
-        return response.redirect('/users');
+      if (!currentUser.admin) {
+        response.redirect('/users');
+        return;
       }
+      return User.findOne(request.params.id, function(user) {
+        return user.update(request.body.user, true, function(error) {
+          return response.redirect('back');
+        });
+      });
     });
   });
   app.get('/chartz', function(request, response, next) {

@@ -209,13 +209,14 @@ app.get '/users/:id/edit', (request, response, next) ->
 app.get '/admin/users', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, '', true)
-      db.collection 'users', (error, users) ->
-        users.find({active: {$ne: true}}).toArray (error, inactiveUsers) ->
-          next(error) if error
-          users.find({active: true}).toArray (error, activeUsers) ->
-            next(error) if error
-            locals = title: 'Users', activeUsers: activeUsers, inactiveUsers: inactiveUsers, currentUser: currentUser
-            renderWithLocals locals, 'admin/users/index', next, response
+      User.findAll active: true, (activeUsers) ->
+        User.findAll active: {$ne: true}, (inactiveUsers) ->
+          locals =
+            title: 'Users'
+            activeUsers: activeUsers
+            inactiveUsers: inactiveUsers
+            currentUser: currentUser
+          renderWithLocals locals, 'admin/users/index', next, response
     else
       response.redirect '/users'
 
@@ -223,7 +224,7 @@ app.get '/admin/users', (request, response, next) ->
 app.post '/users/:id', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, request.params.id)
-      currentUser.update request.body.user, (error) ->
+      currentUser.update request.body.user, false, (error) ->
         if request.body.user.buffset_type
           push currentUser.pusherData(1)
         response.redirect '/users'
@@ -233,22 +234,12 @@ app.post '/users/:id', (request, response, next) ->
 
 app.post '/admin/users/:id', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
-    if currentUser.admin
-      userParams = request.body.user
-      userHash = {}
-      userHash.active = userParams.active != '0'
-      userHash.name   = userParams.name
-      userHash.handle = userParams.handle
-      userHash.team   = Number(userParams.team || 0)
-      id = new db.bson_serializer.ObjectID(request.params.id)
-      db.collection 'users', (error, users) ->
-        next error if error
-        options = safe: true, multi: false, upsert: false
-        users.update {_id: id}, {$set: userHash }, options, (error) ->
-          next error if error
-          response.redirect 'back'
-    else
+    if !currentUser.admin
       response.redirect '/users'
+      return
+    User.findOne request.params.id, (user) ->
+      user.update request.body.user, true, (error) ->
+        response.redirect 'back'
 
 
 app.get '/chartz', (request, response, next) ->

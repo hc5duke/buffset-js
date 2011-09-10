@@ -33,7 +33,8 @@ class User
     tally: @tally(offset)
     abuse: @abuse
 
-  update: (options, callback) ->
+  update: (options, admin, callback) ->
+    conditions = _id: @_id
     updates = { $set: {} }
     updates.$set.abuse  = options.abuse != '0'  if options.abuse?
     updates.$set.female = options.female != '0' if options.female?
@@ -46,7 +47,10 @@ class User
     if options.buffset_type?
       buffset = Helpers.newBuffset @_id, options.buffset_type
       updates.$push = buffsets: buffset
-    conditions = _id: @_id
+    if admin
+      updates.$set.active = options.active != '0' if options.active?
+      updates.$set.name   = options.name
+      updates.$set.team   = Number(options.team || 0)
     options = safe: true, multi: false, upsert: false
     User.db.collection 'users', (error, users) ->
       users.update conditions, updates, options, callback
@@ -55,6 +59,8 @@ User.setDb = (db) ->
   @db = db
 
 User.findOne = (conditions, callback) ->
+  if typeof(conditions) == 'string'
+    conditions = _id: conditions
   if conditions._id
     conditions._id = new @db.bson_serializer.ObjectID(String(conditions._id))
   @db.collection 'users', (error, users) ->
