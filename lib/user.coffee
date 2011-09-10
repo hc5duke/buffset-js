@@ -31,6 +31,7 @@ class User
     name: @name
     count: @buffsets.length + offset
     tally: @tally(offset)
+    abuse: @abuse
 
   update: (options, callback) ->
     updates = { $set: {} }
@@ -38,7 +39,7 @@ class User
     updates.$set.female = options.female != '0' if options.female?
     if options.handle
       handle = options.handle
-      updates.$set.handle = handle[0..7]
+      updates.$set.handle = handle.replace(/^\s*/, '')[0..7].replace(/\s*$/, '')
     if options.team?
       team = options.team
       updates.$set.team = team if team == 0 || team == 1

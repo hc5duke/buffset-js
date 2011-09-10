@@ -183,11 +183,19 @@ if (window.webkitNotifications) {
     var name = data.name;
     var count = data.count;
     var tally = data.tally;
+    var content;
+    if (data.abuse) {
+      var index = Math.floor(Math.random() * discouragements.length);
+      content = discouragements[index];
+    } else {
+      var index = Math.floor(Math.random() * encouragements.length);
+      content = encouragements[index];
+    }
     var options = {
       notificationType: 'simple',
       image: 'https://s3.amazonaws.com/dev_tapjoy/buffsets/muscle.gif',
       title:  name + ' is now at ' + count + '!',
-      content: encouragements[Math.floor(Math.random() * encouragements.length)]
+      content: content.replace('__name__', data.name)
     };
     var notification = createNotificationInstance(options);
     notification.ondisplay = $.noop;
@@ -199,11 +207,12 @@ if (window.webkitNotifications) {
   };
 
   var encouragements = [
-    'You should be doing buffsets.'
+    'You should be doing buffsets.',
+    'Get up and go grab a pushup bar.'
   ];
   var discouragements = [
     'You are weak.',
-    'You are a bitch.'
+    'You are __name__\'s bitch.'
   ];
 
   $('#enable_notifications').click(function(){
