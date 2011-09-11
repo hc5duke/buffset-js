@@ -339,40 +339,31 @@
   });
   app.get('/chartz', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
-      return db.collection('users', function(error, users) {
-        return users.find({
-          active: true
-        }).toArray(function(error, activeUsers) {
-          var locals, series;
-          activeUsers = _.select(activeUsers, function(user) {
-            return user.buffsets.length > 0;
-          });
-          activeUsers = _.sortBy(activeUsers, function(user) {
-            return -user.buffsets.length;
-          });
-          series = _.map(activeUsers, function(user) {
-            var currentCount, data;
-            if (user.buffsets.length > 0) {
-              currentCount = 0;
-              data = _.map(user.buffsets, function(buffset) {
-                currentCount += 1;
-                return [buffset.created_at, currentCount];
-              });
-              return {
-                name: user.handle,
-                data: data,
-                multiplier: user.multiplier
-              };
-            }
-          });
-          locals = {
-            title: 'Competitive Chartz',
-            activeUsers: activeUsers,
-            currentUser: currentUser,
-            series: series
-          };
-          return renderWithLocals(locals, 'chartz/competitive', next, response);
+      return User.withChartableUsers(function(activeUsers) {
+        var locals, series;
+        series = _.map(activeUsers, function(user) {
+          var currentCount, data;
+          if (user.buffsets.length > 0) {
+            currentCount = 0;
+            data = _.map(user.buffsets, function(buffset) {
+              currentCount += 1;
+              return [buffset.created_at, currentCount];
+            });
+            ({
+              name: user.handle,
+              data: data,
+              multiplier: user.multiplier
+            });
+            return user.buffsetData();
+          }
         });
+        locals = {
+          title: 'Competitive Chartz',
+          activeUsers: activeUsers,
+          currentUser: currentUser,
+          series: series
+        };
+        return renderWithLocals(locals, 'chartz/competitive', next, response);
       });
     });
   });
@@ -381,77 +372,67 @@
   });
   app.get('/chartz/sum', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
-      return db.collection('users', function(error, users) {
-        return users.find({
-          active: true
-        }).toArray(function(error, activeUsers) {
-          var buffsets, data, date, dates, earliest, latest, locals;
-          activeUsers = _.select(activeUsers, function(user) {
-            return user.buffsets.length > 0;
-          });
-          activeUsers = _.sortBy(activeUsers, function(user) {
-            return -user.buffsets.length;
-          });
-          earliest = Infinity;
-          latest = 0;
-          buffsets = {};
-          _.each(activeUsers, function(user) {
-            return buffsets[user.handle] = {};
-          });
-          _.each(activeUsers, function(user) {
-            return _.each(user.buffsets, function(buffset) {
-              var created_at, _base;
-              created_at = Helpers.endOfDay(buffset.created_at);
-              (_base = buffsets[user.handle])[created_at] || (_base[created_at] = 0);
-              buffsets[user.handle][created_at] += 1;
-              if (latest < created_at) {
-                latest = created_at;
-              }
-              if (earliest > created_at) {
-                return earliest = created_at;
-              }
-            });
-          });
-          date = earliest;
-          dates = [];
-          while (date <= latest) {
-            dates.push(date);
-            date = new Date(date - 0 + 24 * 3600 * 1000);
-          }
-          _.each(activeUsers, function(user) {
-            var arr, sum;
-            sum = 0;
-            arr = [];
-            _.each(dates, function(date) {
-              var _base;
-              (_base = buffsets[user.handle])[date] || (_base[date] = 0);
-              sum += buffsets[user.handle][date];
-              return arr.push(sum);
-            });
-            return buffsets[user.handle] = arr;
-          });
-          data = [];
-          _.each(buffsets, function(value, key) {
-            var counts;
-            counts = _.map(value, function(count, date) {
-              return count;
-            });
-            return data.push({
-              name: key,
-              data: counts
-            });
-          });
-          dates = _.map(dates, function(date) {
-            return [1 + date.getMonth(), '/', date.getDate()].join('');
-          });
-          locals = {
-            title: 'Tapjoy Buffsets.js',
-            currentUser: currentUser,
-            series: data,
-            categories: dates
-          };
-          return renderWithLocals(locals, 'chartz/cumulative', next, response);
+      return User.withChartableUsers(function(activeUsers) {
+        var buffsets, data, date, dates, earliest, latest, locals;
+        earliest = Infinity;
+        latest = 0;
+        buffsets = {};
+        _.each(activeUsers, function(user) {
+          return buffsets[user.handle] = {};
         });
+        _.each(activeUsers, function(user) {
+          return _.each(user.buffsets, function(buffset) {
+            var created_at, _base;
+            created_at = Helpers.endOfDay(buffset.created_at);
+            (_base = buffsets[user.handle])[created_at] || (_base[created_at] = 0);
+            buffsets[user.handle][created_at] += 1;
+            if (latest < created_at) {
+              latest = created_at;
+            }
+            if (earliest > created_at) {
+              return earliest = created_at;
+            }
+          });
+        });
+        date = earliest;
+        dates = [];
+        while (date <= latest) {
+          dates.push(date);
+          date = new Date(date - 0 + 24 * 3600 * 1000);
+        }
+        _.each(activeUsers, function(user) {
+          var arr, sum;
+          sum = 0;
+          arr = [];
+          _.each(dates, function(date) {
+            var _base;
+            (_base = buffsets[user.handle])[date] || (_base[date] = 0);
+            sum += buffsets[user.handle][date];
+            return arr.push(sum);
+          });
+          return buffsets[user.handle] = arr;
+        });
+        data = [];
+        _.each(buffsets, function(value, key) {
+          var counts;
+          counts = _.map(value, function(count, date) {
+            return count;
+          });
+          return data.push({
+            name: key,
+            data: counts
+          });
+        });
+        dates = _.map(dates, function(date) {
+          return [1 + date.getMonth(), '/', date.getDate()].join('');
+        });
+        locals = {
+          title: 'Tapjoy Buffsets.js',
+          currentUser: currentUser,
+          series: data,
+          categories: dates
+        };
+        return renderWithLocals(locals, 'chartz/cumulative', next, response);
       });
     });
   });

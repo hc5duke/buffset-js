@@ -238,25 +238,21 @@ app.post '/admin/users/:id', (request, response, next) ->
 
 app.get '/chartz', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
-    db.collection 'users', (error, users) ->
-      users.find({active: true}).toArray (error, activeUsers) ->
-        activeUsers = _.select activeUsers, (user) ->
-          user.buffsets.length > 0
-        activeUsers = _.sortBy activeUsers, (user) ->
-          - user.buffsets.length
-        series = _.map activeUsers, (user) ->
-          if user.buffsets.length > 0
-            currentCount = 0
-            data = _.map user.buffsets, (buffset) ->
-              currentCount += 1
-              [ buffset.created_at, currentCount ]
-            name: user.handle, data: data, multiplier: user.multiplier
-        locals =
-          title: 'Competitive Chartz'
-          activeUsers: activeUsers
-          currentUser: currentUser
-          series: series
-        renderWithLocals locals, 'chartz/competitive', next, response
+    User.withChartableUsers (activeUsers) ->
+      series = _.map activeUsers, (user) ->
+        if user.buffsets.length > 0
+          currentCount = 0
+          data = _.map user.buffsets, (buffset) ->
+            currentCount += 1
+            [ buffset.created_at, currentCount ]
+          name: user.handle, data: data, multiplier: user.multiplier
+          user.buffsetData()
+      locals =
+        title: 'Competitive Chartz'
+        activeUsers: activeUsers
+        currentUser: currentUser
+        series: series
+      renderWithLocals locals, 'chartz/competitive', next, response
 
 
 app.get '/chartz/team', (request, response, next) ->
@@ -265,52 +261,47 @@ app.get '/chartz/team', (request, response, next) ->
 
 app.get '/chartz/sum', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
-    db.collection 'users', (error, users) ->
-      users.find({active: true}).toArray (error, activeUsers) ->
-        activeUsers = _.select activeUsers, (user) ->
-          user.buffsets.length > 0
-        activeUsers = _.sortBy activeUsers, (user) ->
-          - user.buffsets.length
-        earliest = Infinity
-        latest = 0
-        buffsets = {}
-        _.each activeUsers, (user) ->
-          buffsets[user.handle] = {}
-        _.each activeUsers, (user) ->
-          _.each user.buffsets, (buffset) ->
-            created_at = Helpers.endOfDay(buffset.created_at)
-            buffsets[user.handle][created_at] ||= 0
-            buffsets[user.handle][created_at] += 1
-            latest   = created_at if latest   < created_at
-            earliest = created_at if earliest > created_at
-        date = earliest
-        dates = []
-        # comile list of dates
-        while date <= latest
-          dates.push date
-          date = new Date(date - 0 + 24 * 3600 * 1000)
+    User.withChartableUsers (activeUsers) ->
+      earliest = Infinity
+      latest = 0
+      buffsets = {}
+      _.each activeUsers, (user) ->
+        buffsets[user.handle] = {}
+      _.each activeUsers, (user) ->
+        _.each user.buffsets, (buffset) ->
+          created_at = Helpers.endOfDay(buffset.created_at)
+          buffsets[user.handle][created_at] ||= 0
+          buffsets[user.handle][created_at] += 1
+          latest   = created_at if latest   < created_at
+          earliest = created_at if earliest > created_at
+      date = earliest
+      dates = []
+      # comile list of dates
+      while date <= latest
+        dates.push date
+        date = new Date(date - 0 + 24 * 3600 * 1000)
 
-        _.each activeUsers, (user) ->
-          sum = 0
-          arr = []
-          _.each dates, (date) ->
-            buffsets[user.handle][date] ||= 0
-            sum += buffsets[user.handle][date]
-            arr.push sum
-          buffsets[user.handle] = arr
-        data = []
-        _.each buffsets, (value, key) ->
-          counts = _.map value, (count, date) -> count
-          data.push name: key, data: counts
+      _.each activeUsers, (user) ->
+        sum = 0
+        arr = []
+        _.each dates, (date) ->
+          buffsets[user.handle][date] ||= 0
+          sum += buffsets[user.handle][date]
+          arr.push sum
+        buffsets[user.handle] = arr
+      data = []
+      _.each buffsets, (value, key) ->
+        counts = _.map value, (count, date) -> count
+        data.push name: key, data: counts
 
-        # make dates array into strings
-        dates = _.map dates, (date) -> [1+date.getMonth(), '/', date.getDate()].join ''
-        locals =
-          title: 'Tapjoy Buffsets.js'
-          currentUser: currentUser
-          series: data
-          categories: dates
-        renderWithLocals locals, 'chartz/cumulative', next, response
+      # make dates array into strings
+      dates = _.map dates, (date) -> [1+date.getMonth(), '/', date.getDate()].join ''
+      locals =
+        title: 'Tapjoy Buffsets.js'
+        currentUser: currentUser
+        series: data
+        categories: dates
+      renderWithLocals locals, 'chartz/cumulative', next, response
 
 
 app.get '/chartz/punch', (request, response, next) ->

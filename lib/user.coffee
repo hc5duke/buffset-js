@@ -94,4 +94,13 @@ User.withCounts = (callback) ->
     User.count active: true, (activeCount) ->
       callback count: count, activeCount: activeCount
 
+User.withChartableUsers = (callback) ->
+  User.findAll active: true, (activeUsers) ->
+    if !activeUsers
+      callback(false)
+      return
+    activeUsers = _.select activeUsers, (user) -> user.buffsets.length > 0
+    activeUsers = _.sortBy activeUsers, (user) -> - user.buffsets.length
+    callback(activeUsers)
+
 module.exports = User
