@@ -138,20 +138,19 @@ app.get '/verify', (request, response, next) ->
     if error || !result.authenticated
       response.send 'Failure :('
       return
-    # 1: is there uid?
     service = Helpers.newService result
     User.findOne 'services.uid': service.uid, (user) ->
       if user
-        # log in user
-        Helpers.logIn user, request.session
+        # 1: existing user, log in
+        user.logIn request.session
         response.redirect '/users/'
       else
         callback = (error, user) ->
-          Helpers.logIn user, request.session
+          user.logIn(request.session)
           response.redirect '/users/' + user._id + '/edit'
-        # 2: is there email?
         User.findOne email: result.email, (user) ->
           if user
+            # 2: existing user, new service
             user.update service: service, true, () ->
               callback(user)
           else

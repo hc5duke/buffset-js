@@ -61,8 +61,5 @@ module.exports.newBuffset = (userId, buffsetType) ->
   user_id: userId
   type: buffsetType
 
-module.exports.logIn = (user, session) ->
-  session.userId = user._id
-
 module.exports.logOut = (session) ->
   session.userId = null

@@ -56,6 +56,9 @@ class User
     User.db.collection 'users', (error, users) ->
       users.update conditions, updates, options, callback
 
+  logIn: (session) ->
+    session.userId = @_id
+
 User.setDb = (db) ->
   @db = db
 

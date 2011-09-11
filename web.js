@@ -180,11 +180,11 @@
       }, function(user) {
         var callback;
         if (user) {
-          Helpers.logIn(user, request.session);
+          user.logIn(request.session);
           return response.redirect('/users/');
         } else {
           callback = function(error, user) {
-            Helpers.logIn(user, request.session);
+            user.logIn(request.session);
             return response.redirect('/users/' + user._id + '/edit');
           };
           return User.findOne({
