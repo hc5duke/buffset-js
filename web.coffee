@@ -151,8 +151,7 @@ app.get '/verify', (request, response, next) ->
         User.findOne email: result.email, (user) ->
           if user
             # 2: existing user, new service
-            user.update service: service, true, () ->
-              callback(user)
+            user.update service: service, true, () -> callback(user)
           else
             # 3: create user
             User.create result, service, callback

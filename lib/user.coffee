@@ -118,11 +118,10 @@ User.withCounts = (callback) ->
       callback count: count, activeCount: activeCount
 
 User.withChartableUsers = (callback) ->
-  User.findAll active: true, (activeUsers) ->
+  User.findAll { active: true, buffsets: {$ne: []} }, (activeUsers) ->
     if !activeUsers
       callback(false)
       return
-    activeUsers = _.select activeUsers, (user) -> user.buffsets.length > 0
     activeUsers = _.sortBy activeUsers, (user) -> - user.buffsets.length
     callback(activeUsers)
 
