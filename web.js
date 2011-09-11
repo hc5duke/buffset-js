@@ -1,5 +1,5 @@
 (function() {
-  var Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extensions, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, url, _;
+  var Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extension, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, relyingPartyUrl, renderWithLocals, server, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -13,11 +13,12 @@
   Helpers = require('./lib/helpers');
   User = require('./lib/user');
   port = process.env.PORT || 4000;
-  relyingParty = null;
   pusher = null;
   channel = 'test_channel';
   event = 'my_event';
+  relyingPartyUrl = 'https://buffsets.tapjoy.com/verify';
   push = function(data) {
+    data._source = relyingPartyUrl.split(/\/+/)[1];
     if (pusher) {
       return pusher.trigger(channel, event, data);
     }
@@ -32,13 +33,6 @@
   } else {
     console.log("WARNING: no Pusher");
   }
-  extensions = [
-    new openid.AttributeExchange({
-      "http://axschema.org/contact/email": "required",
-      "http://axschema.org/namePerson/first": "required",
-      "http://axschema.org/namePerson/last": "required"
-    })
-  ];
   Server = mongo.Server;
   Db = mongo.Db;
   RedisStore = redis(express);
@@ -68,7 +62,7 @@
         maxAge: oneYear
       })
     }));
-    return relyingParty = new openid.RelyingParty('http://localhost:' + port + '/verify', null, false, false, extensions);
+    return relyingPartyUrl = 'http://localhost:' + port + '/verify';
   });
   app.configure('production', function() {
     var oneYear, redisConfig, x, _ref;
@@ -79,7 +73,7 @@
     app.use(express.errorHandler());
     _ref = (process.env.MONGOHQ_URL || '').split(/:|@|\//), x = _ref[0], x = _ref[1], x = _ref[2], dbUser = _ref[3], dbPass = _ref[4], dbHost = _ref[5], dbPort = _ref[6], dbName = _ref[7];
     redisConfig = (process.env.REDISTOGO_URL || '').split(/:|@|\//);
-    app.use(express.session({
+    return app.use(express.session({
       secret: "keyboard cat",
       store: new RedisStore({
         maxAge: oneYear,
@@ -88,8 +82,13 @@
         port: redisConfig[6]
       })
     }));
-    return relyingParty = new openid.RelyingParty('https://buffsets.tapjoy.com/verify', null, false, false, extensions);
   });
+  extension = new openid.AttributeExchange({
+    "http://axschema.org/contact/email": "required",
+    "http://axschema.org/namePerson/first": "required",
+    "http://axschema.org/namePerson/last": "required"
+  });
+  relyingParty = new openid.RelyingParty(relyingPartyUrl, null, false, false, [extension]);
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
   });
@@ -244,6 +243,7 @@
         locals = {
           title: 'Competitive Chartz',
           currentUser: currentUser,
+          user: user,
           series: [user.buffsetData()]
         };
         return renderWithLocals(locals, 'chartz/competitive', next, response);

@@ -11,13 +11,15 @@ Pusher = require 'node-pusher'
 Helpers = require './lib/helpers'
 User = require './lib/user'
 port = process.env.PORT || 4000
-relyingParty = null
-
 pusher = null
 channel = 'test_channel'
 event = 'my_event'
+relyingPartyUrl = 'https://buffsets.tapjoy.com/verify'
+
 push = (data) ->
+  data._source = relyingPartyUrl.split(/\/+/)[1]
   pusher.trigger channel, event, data if pusher
+
 if process.env.PUSHER_URL
   pusherConfig = process.env.PUSHER_URL.split(/:|@|\//)
   pusher = new Pusher
@@ -26,13 +28,6 @@ if process.env.PUSHER_URL
     secret: pusherConfig[4]
 else
   console.log "WARNING: no Pusher"
-
-extensions = [
-  new openid.AttributeExchange
-    "http://axschema.org/contact/email": "required"
-    "http://axschema.org/namePerson/first": "required"
-    "http://axschema.org/namePerson/last": "required"
-]
 
 Server = mongo.Server
 Db = mongo.Db
@@ -58,8 +53,7 @@ app.configure 'development', ->
     secret: "keyboard cat"
     store: new RedisStore
       maxAge: oneYear
-  relyingParty = new openid.RelyingParty 'http://localhost:'+port+'/verify', null, false, false, extensions
-
+  relyingPartyUrl = 'http://localhost:'+port+'/verify'
 
 app.configure 'production', ->
   oneYear = 31557600000
@@ -74,7 +68,12 @@ app.configure 'production', ->
       pass: redisConfig[4]
       host: redisConfig[5]
       port: redisConfig[6]
-  relyingParty = new openid.RelyingParty 'https://buffsets.tapjoy.com/verify', null, false, false, extensions
+
+extension = new openid.AttributeExchange
+  "http://axschema.org/contact/email": "required"
+  "http://axschema.org/namePerson/first": "required"
+  "http://axschema.org/namePerson/last": "required"
+relyingParty = new openid.RelyingParty relyingPartyUrl, null, false, false, [extension]
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
@@ -179,6 +178,7 @@ app.get '/users/:id', (request, response, next) ->
       locals =
         title: 'Competitive Chartz'
         currentUser: currentUser
+        user: user
         series: [ user.buffsetData() ]
       renderWithLocals locals, 'chartz/competitive', next, response
 
