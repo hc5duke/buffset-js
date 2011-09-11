@@ -86,7 +86,10 @@ User.findOne = (conditions, callback) ->
   if typeof(conditions) == 'string'
     conditions = _id: conditions
   if conditions._id
-    conditions._id = new @db.bson_serializer.ObjectID(String(conditions._id))
+    try
+      conditions._id = new @db.bson_serializer.ObjectID(String(conditions._id))
+    catch error
+      return callback false
   @db.collection 'users', (error, users) ->
     users.findOne conditions, (error, user) ->
       if user

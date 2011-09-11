@@ -238,6 +238,10 @@
     return User.findOne({
       _id: request.params.id
     }, function(user) {
+      if (!user) {
+        response.redirect('/users');
+        return;
+      }
       return User.withCurrentUser(request.session, function(currentUser) {
         var locals;
         locals = {

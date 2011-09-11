@@ -174,6 +174,9 @@ app.get '/users', (request, response, next) ->
 
 app.get '/users/:id', (request, response, next) ->
   User.findOne _id: request.params.id, (user) ->
+    if !user
+      response.redirect '/users'
+      return
     User.withCurrentUser request.session, (currentUser) ->
       locals =
         title: 'Competitive Chartz'
