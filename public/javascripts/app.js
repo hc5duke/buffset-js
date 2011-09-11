@@ -227,10 +227,8 @@ if (window.webkitNotifications) {
 
 var pusher = new Pusher('ee24436a8c23a9f95d03');
 var channel = pusher.subscribe('test_channel');
-var bindPusher = function() {
-  channel.bind('my_event', function(data) {
-    var find = '#user_' + data.id + ' .count';
-    $(find).text(data.tally);
-    update(data);
-  });
-};
+channel.bind('my_event', function(data) {
+  var find = '#user_' + data.id + ' .count';
+  $(find).text(data.tally);
+  update(data);
+});

@@ -342,20 +342,7 @@
       return User.withChartableUsers(function(activeUsers) {
         var locals, series;
         series = _.map(activeUsers, function(user) {
-          var currentCount, data;
-          if (user.buffsets.length > 0) {
-            currentCount = 0;
-            data = _.map(user.buffsets, function(buffset) {
-              currentCount += 1;
-              return [buffset.created_at, currentCount];
-            });
-            ({
-              name: user.handle,
-              data: data,
-              multiplier: user.multiplier
-            });
-            return user.buffsetData();
-          }
+          return user.buffsetData();
         });
         locals = {
           title: 'Competitive Chartz',
@@ -368,7 +355,43 @@
     });
   });
   app.get('/chartz/team', function(request, response, next) {
-    return response.redirect('/chartz');
+    return User.withCurrentUser(request.session, function(currentUser) {
+      return User.withChartableUsers(function(activeUsers) {
+        var index, locals, series, teamNames, teams;
+        teams = _.groupBy(activeUsers, function(user) {
+          return user.team;
+        });
+        index = -1;
+        teamNames = ['Dev/Prod', 'Sales/Mktg'];
+        series = _.map(teams, function(team) {
+          var buffsets, currentCount, data;
+          buffsets = _.map(team, function(user) {
+            return user.buffsets;
+          });
+          buffsets = _.flatten(buffsets);
+          buffsets = _.sortBy(buffsets, function(buffset) {
+            return buffset.created_at;
+          });
+          currentCount = 0;
+          data = _.map(buffsets, function(buffset) {
+            currentCount += 1;
+            return [buffset.created_at, currentCount];
+          });
+          index++;
+          return {
+            name: teamNames[index],
+            data: data
+          };
+        });
+        locals = {
+          title: 'Competitive Chartz',
+          activeUsers: activeUsers,
+          currentUser: currentUser,
+          series: series
+        };
+        return renderWithLocals(locals, 'chartz/competitive', next, response);
+      });
+    });
   });
   app.get('/chartz/sum', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {

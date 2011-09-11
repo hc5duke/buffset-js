@@ -35,7 +35,7 @@ html
                 - else
                   .count= Helpers.tallyize(user.buffsets.length)
           section#sales
-            h3 Sales (#{scores[1]})
+            h3 Sales + Mktg (#{scores[1]})
             - each user in teams[1]
               - myUser = (currentUser && user._id == String(currentUser._id))
               - user_id = myUser ? 'current_user' : "user_" + user._id
@@ -62,6 +62,3 @@ html
                   .count= Helpers.tallyize(user.buffsets.length)
         .clear
     include ../includes/footer
-    - if (currentUser)
-      script
-        bindPusher();

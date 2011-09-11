@@ -239,14 +239,7 @@ app.post '/admin/users/:id', (request, response, next) ->
 app.get '/chartz', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     User.withChartableUsers (activeUsers) ->
-      series = _.map activeUsers, (user) ->
-        if user.buffsets.length > 0
-          currentCount = 0
-          data = _.map user.buffsets, (buffset) ->
-            currentCount += 1
-            [ buffset.created_at, currentCount ]
-          name: user.handle, data: data, multiplier: user.multiplier
-          user.buffsetData()
+      series = _.map activeUsers, (user) -> user.buffsetData()
       locals =
         title: 'Competitive Chartz'
         activeUsers: activeUsers
@@ -256,7 +249,27 @@ app.get '/chartz', (request, response, next) ->
 
 
 app.get '/chartz/team', (request, response, next) ->
-  response.redirect '/chartz'
+  User.withCurrentUser request.session, (currentUser) ->
+    User.withChartableUsers (activeUsers) ->
+      teams = _.groupBy activeUsers, (user) -> user.team
+      index = -1
+      teamNames = ['Dev/Prod', 'Sales/Mktg']
+      series = _.map teams, (team) ->
+        buffsets = _.map team, (user) -> user.buffsets
+        buffsets = _.flatten buffsets
+        buffsets = _.sortBy buffsets, (buffset) -> buffset.created_at
+        currentCount = 0
+        data = _.map buffsets, (buffset) ->
+          currentCount += 1
+          [ buffset.created_at, currentCount ]
+        index++
+        name: teamNames[index], data: data
+      locals =
+        title: 'Competitive Chartz'
+        activeUsers: activeUsers
+        currentUser: currentUser
+        series: series
+      renderWithLocals locals, 'chartz/competitive', next, response
 
 
 app.get '/chartz/sum', (request, response, next) ->
