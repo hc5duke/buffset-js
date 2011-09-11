@@ -170,8 +170,7 @@
     return relyingParty.verifyAssertion(request, function(error, result) {
       var service;
       if (error || !result.authenticated) {
-        response.send('Failure :(');
-        return;
+        return response.send('Failure :(');
       }
       service = Helpers.newService(result);
       return User.findOne({
@@ -239,8 +238,7 @@
       _id: request.params.id
     }, function(user) {
       if (!user) {
-        response.redirect('/users');
-        return;
+        return response.redirect('/users');
       }
       return User.withCurrentUser(request.session, function(currentUser) {
         var locals;
@@ -326,8 +324,7 @@
   app.post('/admin/users/:id', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
       if (!currentUser.admin) {
-        response.redirect('/users');
-        return;
+        return response.redirect('/users');
       }
       return User.findOne(request.params.id, function(user) {
         return user.update(request.body.user, true, function(error) {

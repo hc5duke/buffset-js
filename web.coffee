@@ -134,9 +134,7 @@ app.get '/authenticate', (request, response) ->
 
 app.get '/verify', (request, response, next) ->
   relyingParty.verifyAssertion request, (error, result) ->
-    if error || !result.authenticated
-      response.send 'Failure :('
-      return
+    return response.send 'Failure :(' if error || !result.authenticated
     service = Helpers.newService result
     User.findOne 'services.uid': service.uid, (user) ->
       if user
@@ -174,9 +172,7 @@ app.get '/users', (request, response, next) ->
 
 app.get '/users/:id', (request, response, next) ->
   User.findOne _id: request.params.id, (user) ->
-    if !user
-      response.redirect '/users'
-      return
+    return response.redirect '/users' if !user
     User.withCurrentUser request.session, (currentUser) ->
       locals =
         title: 'Competitive Chartz'
@@ -227,9 +223,7 @@ app.post '/users/:id', (request, response, next) ->
 
 app.post '/admin/users/:id', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
-    if !currentUser.admin
-      response.redirect '/users'
-      return
+    return response.redirect '/users' if !currentUser.admin
     User.findOne request.params.id, (user) ->
       user.update request.body.user, true, (error) ->
         response.redirect 'back'
