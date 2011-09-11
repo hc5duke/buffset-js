@@ -68,7 +68,7 @@
         maxAge: oneYear
       })
     }));
-    return relyingParty = new openid.RelyingParty('http://dev:' + port + '/verify', null, false, false, extensions);
+    return relyingParty = new openid.RelyingParty('http://localhost:' + port + '/verify', null, false, false, extensions);
   });
   app.configure('production', function() {
     var oneYear, redisConfig, x, _ref;

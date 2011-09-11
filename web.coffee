@@ -58,7 +58,7 @@ app.configure 'development', ->
     secret: "keyboard cat"
     store: new RedisStore
       maxAge: oneYear
-  relyingParty = new openid.RelyingParty 'http://dev:'+port+'/verify', null, false, false, extensions
+  relyingParty = new openid.RelyingParty 'http://localhost:'+port+'/verify', null, false, false, extensions
 
 
 app.configure 'production', ->
