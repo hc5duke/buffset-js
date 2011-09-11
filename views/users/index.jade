@@ -8,7 +8,7 @@ html
         #season-number 3
       #container
         #users.text
-          - if (! currentUser.active)
+          - if ( currentUser && ! currentUser.active)
             h3.warn Your account has not been activated yet. Go yell at Hwan-Joon until it is.
           section#prod
             h3 Dev + Prod (#{scores[0]})
