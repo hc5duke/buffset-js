@@ -8,6 +8,13 @@ html
         #season-number 3
       .text
         #container
+      - if (currentUser.admin && typeof(user) != 'undefined')
+        - each buffset in user.buffsets
+          = buffset.created_at
+          | :
+          = buffset.type
+          br/
+
     include ../includes/footer
     script
       var series = $.parseJSON('#{JSON.stringify(series)}'.replace(/&quot;/g, '"'));

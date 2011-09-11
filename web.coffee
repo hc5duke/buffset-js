@@ -144,7 +144,7 @@ app.get '/verify', (request, response, next) ->
         user.logIn request.session
         response.redirect '/users/'
       else
-        callback = (error, user) ->
+        callback = (user) ->
           user.logIn(request.session)
           response.redirect '/users/' + user._id + '/edit'
         User.findOne email: result.email, (user) ->

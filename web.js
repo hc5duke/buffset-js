@@ -182,7 +182,7 @@
           user.logIn(request.session);
           return response.redirect('/users/');
         } else {
-          callback = function(error, user) {
+          callback = function(user) {
             user.logIn(request.session);
             return response.redirect('/users/' + user._id + '/edit');
           };

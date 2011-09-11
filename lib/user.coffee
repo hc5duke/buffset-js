@@ -79,7 +79,8 @@ User.create = (data, service, callback) ->
       name: name.join ' '
       buffsets: []
       services: [ service ]
-    users.insert user, safe: true, callback
+    users.insert user, safe: true, (error, newUsers) ->
+      callback new User newUsers[0]
 
 User.findOne = (conditions, callback) ->
   if typeof(conditions) == 'string'
