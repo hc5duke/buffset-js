@@ -59,8 +59,8 @@ class User
       ones = number % 10
       str = [ romanize(number - ones), ' ' ]
       if ones >= 5
-        five_tally = String.fromCharCode 822, 47, 822, 47, 822, 47, 822, 47
-        str.push five_tally, ' '
+        fiveTally = String.fromCharCode 822, 47, 822, 47, 822, 47, 822, 47
+        str.push fiveTally, ' '
         ones = ones - 5
       if ones > 0
         slashes = ('/' for i in [1..ones])
@@ -110,10 +110,10 @@ User.create = (data, service, callback) ->
     name = [data.firstname, data.lastname]
     handle = (data.firstname[0] + data.lastname[0]).toUpperCase()
     email = data.email
-    is_tapjoy = email.match /@tapjoy\.com$/
+    isTapjoy = email.match /@tapjoy\.com$/
     user =
       created_at: new Date()
-      active: !!is_tapjoy
+      active: !!isTapjoy
       admin: false
       female: false
       abuse: false
