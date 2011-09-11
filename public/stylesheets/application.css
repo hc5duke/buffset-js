@@ -11,6 +11,9 @@ input {
 .small {
   font-size: 14px;
 }
+h3.warn {
+  color: #800;
+}
 #nav_pages {
   float: left;
   color: black;
