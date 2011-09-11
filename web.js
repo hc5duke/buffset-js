@@ -376,6 +376,9 @@
       });
     });
   });
+  app.get('/chartz/team', function(request, response, next) {
+    return response.redirect('/chartz');
+  });
   app.get('/chartz/sum', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
       return db.collection('users', function(error, users) {

@@ -259,6 +259,10 @@ app.get '/chartz', (request, response, next) ->
         renderWithLocals locals, 'chartz/competitive', next, response
 
 
+app.get '/chartz/team', (request, response, next) ->
+  response.redirect '/chartz'
+
+
 app.get '/chartz/sum', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     db.collection 'users', (error, users) ->
