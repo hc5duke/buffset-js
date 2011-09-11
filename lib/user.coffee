@@ -35,7 +35,7 @@ class User
 
   update: (options, admin, callback) ->
     conditions = _id: @_id
-    updates = { $set: {} }
+    updates = { $set: {}, $push: {} }
     updates.$set.abuse  = options.abuse != '0'  if options.abuse?
     updates.$set.female = options.female != '0' if options.female?
     if options.handle
@@ -48,15 +48,35 @@ class User
       buffset = Helpers.newBuffset @_id, options.buffset_type
       updates.$push = buffsets: buffset
     if admin
-      updates.$set.active = options.active != '0' if options.active?
-      updates.$set.name   = options.name
-      updates.$set.team   = Number(options.team || 0)
+      updates.$set.active     = options.active != '0' if options.active?
+      updates.$set.name       = options.name
+      updates.$set.team       = Number(options.team || 0)
+      updates.$push.services  = options.service if options.service?
     options = safe: true, multi: false, upsert: false
     User.db.collection 'users', (error, users) ->
       users.update conditions, updates, options, callback
 
 User.setDb = (db) ->
   @db = db
+
+User.create = (data, service, callback) ->
+  @db.collection 'users', (error, users) ->
+    name = [data.firstname, data.lastname]
+    handle = (data.firstname[0] + data.lastname[0]).toUpperCase()
+    email = data.email
+    is_tapjoy = email.match /@tapjoy\.com$/
+    user =
+      created_at: new Date()
+      active: !!is_tapjoy
+      admin: false
+      female: false
+      abuse: false
+      email: email
+      handle: handle
+      name: name.join ' '
+      buffsets: []
+      services: [ service ]
+    users.insert user, safe: true, callback
 
 User.findOne = (conditions, callback) ->
   if typeof(conditions) == 'string'

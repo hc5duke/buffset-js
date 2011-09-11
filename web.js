@@ -178,32 +178,27 @@
       return User.findOne({
         'services.uid': service.uid
       }, function(user) {
+        var callback;
         if (user) {
           Helpers.logIn(user, request.session);
           return response.redirect('/users/');
         } else {
+          callback = function(error, user) {
+            Helpers.logIn(user, request.session);
+            return response.redirect('/users/' + user._id + '/edit');
+          };
           return User.findOne({
             email: result.email
           }, function(user) {
-            var email, is_tapjoy;
             if (user) {
-              users.update({
-                _id: user._id
-              }, {
-                $push: {
-                  services: service
-                }
+              return user.update({
+                service: service
+              }, true, function() {
+                return callback(user);
               });
             } else {
-              user = Helpers.newUser(result);
-              email = user.email;
-              is_tapjoy = email.match(/@tapjoy\.com$/ != null ? /@tapjoy\.com$/ : {
-                "true": false
-              });
-              users.insert(user);
+              return User.create(result, service, callback);
             }
-            Helpers.logIn(user, request.session);
-            return response.redirect('/users/' + user._id + '/edit');
           });
         }
       });

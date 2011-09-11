@@ -146,19 +146,17 @@ app.get '/verify', (request, response, next) ->
         Helpers.logIn user, request.session
         response.redirect '/users/'
       else
+        callback = (error, user) ->
+          Helpers.logIn user, request.session
+          response.redirect '/users/' + user._id + '/edit'
         # 2: is there email?
         User.findOne email: result.email, (user) ->
           if user
-            users.update({_id: user._id}, {$push: {services: service}})
+            user.update service: service, true, () ->
+              callback(user)
           else
             # 3: create user
-            # TODO: refactor
-            user = Helpers.newUser result
-            email = user.email
-            is_tapjoy = email.match /@tapjoy\.com$/ ? true : false
-            users.insert(user)
-          Helpers.logIn user, request.session
-          response.redirect '/users/' + user._id + '/edit'
+            User.create result, service, callback
 
 
 app.get '/users', (request, response, next) ->
