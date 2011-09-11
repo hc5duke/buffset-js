@@ -116,7 +116,7 @@ app.get '/', (request, response, next) ->
 
 
 app.get '/services/signout', (request, response, next) ->
-  Helpers.logOut(request.session)
+  session.userId = null #log out
   response.redirect '/'
 
 

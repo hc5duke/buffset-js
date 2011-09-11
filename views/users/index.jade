@@ -20,7 +20,7 @@ html
                   a(href = '/users/' + user._id)= user.handle
                 - if (myUser)
                   .count#edit_current_user
-                    a(href = '#')= Helpers.tallyize(user.buffsets.length)
+                    a(href = '#')= user.tally()
                   .hidden#edit_current_user_form
                     .center
                       form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
@@ -35,7 +35,7 @@ html
                     .clear
                     input.btn#cancel_edit(type="submit", value="cancel")
                 - else
-                  .count= Helpers.tallyize(user.buffsets.length)
+                  .count= user.tally()
           section#sales
             h3 Sales + Mktg (#{scores[1]})
             - each user in teams[1]
@@ -46,7 +46,7 @@ html
                   a(href = '/users/' + user._id)= user.handle
                 - if (myUser)
                   .count#edit_current_user
-                    a(href = '#')= Helpers.tallyize(user.buffsets.length)
+                    a(href = '#')= user.tally()
                   .hidden#edit_current_user_form
                     .center
                       form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
@@ -61,6 +61,6 @@ html
                     .clear
                     input.btn#cancel_edit(type="submit", value="cancel")
                 - else
-                  .count= Helpers.tallyize(user.buffsets.length)
+                  .count= user.tally()
         .clear
     include ../includes/footer
