@@ -4,12 +4,15 @@ html
   body
     include includes/toolbar
     .container#body
-      #season-number-outside
-        #season-number 3
-      #container
-        .text
-          a(href="/authenticate")
-            img(src="https://s3.amazonaws.com/dev_tapjoy/buffsets/google_64.png", size="64x64", alt="Google")
-            br/
-            \Sign in
+      #body-top
+        #season-number-outside
+          #season-number 3
+      #body-middle
+        #container
+          .text
+            a(href="/authenticate")
+              img(src="https://s3.amazonaws.com/dev_tapjoy/buffsets/google_64.png", size="64x64", alt="Google")
+              br/
+              | Sign in
+      #body-bottom
     include includes/footer

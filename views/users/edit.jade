@@ -4,16 +4,17 @@ html
   body
     include ../includes/toolbar
     .container#body
-      #season-number-outside
-        #season-number 3
-      #container
+      #body-top
+        #season-number-outside
+          #season-number 3
+      #body-middle
         section#edit-user.text
           form.edit_user(action="/users/" + user._id, method="post")
             fieldset
               legend Edit user
               .clearfix
                 label(value='user_email') Email
-                input#user_email.xlarge(type='email', disabled='disabled', value=user.email, name='user[email]')
+                = user.email
               .clearfix
                 label(value='user_handle') Handle
                 input#user_handle.xlarge(type='text', value=user.handle, name='user[handle]', maxlength=8)
@@ -29,5 +30,5 @@ html
                   .span4.columns
                     input.btn.large.primary#user_submit(type='submit', value='Update User')
                   .span3.columns &nbsp;
-
+      #body-bottom
     include ../includes/footer
