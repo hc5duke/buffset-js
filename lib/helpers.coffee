@@ -8,8 +8,3 @@ module.exports.newService = (result) ->
   uemail: result.email
   uid: result.claimedIdentifier
   uname: [result.firstname, result.lastname].join ' '
-
-module.exports.newBuffset = (userId, buffsetType) ->
-  created_at: new Date()
-  user_id: userId
-  type: buffsetType

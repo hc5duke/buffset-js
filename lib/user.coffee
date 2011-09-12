@@ -75,6 +75,12 @@ class User
     count: @buffsets.length + offset
     tally: @tally(offset)
 
+  newBuffset: (buffsetType) ->
+    _id: new User.db.bson_serializer.ObjectID()
+    created_at: new Date()
+    user_id: @_id
+    type: buffsetType
+
   update: (options, admin, callback) ->
     conditions = _id: @_id
     updates = { $set: {}, $push: {} }
@@ -87,7 +93,7 @@ class User
       team = options.team
       updates.$set.team = team if team == 0 || team == 1
     if options.buffset_type?
-      buffset = Helpers.newBuffset @_id, options.buffset_type
+      buffset = @newBuffset options.buffset_type
       updates.$push = buffsets: buffset
     if admin
       updates.$set.active     = options.active != '0' if options.active?

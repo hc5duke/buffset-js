@@ -4,8 +4,10 @@ html
   body
     include ../includes/toolbar
     #container.fullsize
-      - if (currentUser.admin && typeof(user) != 'undefined')
+    - if (currentUser.admin && typeof(user) != 'undefined')
+      #data
         - each buffset in user.buffsets
+          = buffset._id
           = buffset.created_at
           | :
           = buffset.type
