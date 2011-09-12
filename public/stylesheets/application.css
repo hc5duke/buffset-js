@@ -93,6 +93,7 @@ h3.warn {
 .user .handle {
   text-align: center;
   border-bottom: 3px solid #0c7579;
+  white-space: nowrap;
 }
 .user .handle a {
   text-decoration: none;
