@@ -1,5 +1,5 @@
 _ = require 'underscore'
-Helpers = require './helpers'
+Buffset = require './buffset'
 
 class User
   constructor: (user) ->
@@ -75,12 +75,6 @@ class User
     count: @buffsets.length + offset
     tally: @tally(offset)
 
-  newBuffset: (buffsetType) ->
-    _id: new User.db.bson_serializer.ObjectID()
-    created_at: new Date()
-    user_id: @_id
-    type: buffsetType
-
   update: (options, admin, callback) ->
     conditions = _id: @_id
     updates = { $set: {}, $push: {} }
@@ -92,9 +86,10 @@ class User
     if options.team?
       team = options.team
       updates.$set.team = team if team == 0 || team == 1
+    # should really be in buffset#create not here
     if options.buffset_type?
-      buffset = @newBuffset options.buffset_type
-      updates.$push = buffsets: buffset
+      buffset = new Buffset @_id, options.buffset_type
+      return callback()
     if admin
       updates.$set.active     = options.active != '0' if options.active?
       updates.$set.name       = options.name
@@ -109,6 +104,7 @@ class User
 
 User.setDb = (db) ->
   @db = db
+  Buffset.setDb db
 
 User.create = (data, service, callback) ->
   @db.collection 'users', (error, users) ->
