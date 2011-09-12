@@ -3,11 +3,7 @@ html
   include ../includes/head
   body
     include ../includes/toolbar
-    .container#body
-      #season-number-outside
-        #season-number 3
-      .text
-        #container
+    #container.fullsize
     include ../includes/footer
     script
       var series = $.parseJSON('#{JSON.stringify(series)}'.replace(/&quot;/g, '"'));

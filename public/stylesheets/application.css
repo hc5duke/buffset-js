@@ -11,6 +11,9 @@ input {
 .small {
   font-size: 14px;
 }
+.fullsize {
+  height: 600px;
+}
 h3.warn {
   color: #800;
 }

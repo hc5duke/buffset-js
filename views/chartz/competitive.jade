@@ -3,9 +3,7 @@ html
   include ../includes/head
   body
     include ../includes/toolbar
-    .container#body
-      .text
-        #container
+    #container.fullsize
       - if (currentUser.admin && typeof(user) != 'undefined')
         - each buffset in user.buffsets
           = buffset.created_at
