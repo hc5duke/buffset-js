@@ -147,7 +147,7 @@
     });
   });
   app.get('/services/signout', function(request, response, next) {
-    session.userId = null;
+    request.session.userId = null;
     return response.redirect('/');
   });
   app.get('/authenticate', function(request, response) {

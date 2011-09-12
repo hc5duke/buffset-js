@@ -116,7 +116,7 @@ app.get '/', (request, response, next) ->
 
 
 app.get '/services/signout', (request, response, next) ->
-  session.userId = null #log out
+  request.session.userId = null #log out
   response.redirect '/'
 
 
