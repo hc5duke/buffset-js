@@ -155,6 +155,10 @@ $('#cancel_edit').click(function(){
   return false;
 });
 
+$('form.new_buffset').submit(function(){
+  $(this).children('input[type=submit]').attr('disabled', 'disabled');
+  return true;
+});
 var update = $.noop;
 
 if (window.webkitNotifications) {

@@ -11,13 +11,13 @@ mixin teamScores(name, users, score)
           a(href = '#')= user.tally()
         .hidden#edit_current_user_form
           .center
-            form.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
+            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
               input(type="hidden", name="user[buffset_type]", value="pushup")
               input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
-            form.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
+            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
               input(type="hidden", name="user[buffset_type]", value="situp")
               input.btn.primary#user_submit(name="commit", type="submit", value="30 Sit-ups")
-            form.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
+            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
               input(type="hidden", name="user[buffset_type]", value="pullup")
               input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
           .clear
