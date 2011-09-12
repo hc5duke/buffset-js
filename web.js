@@ -1,5 +1,5 @@
 (function() {
-  var Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extension, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, relyingPartyUrl, renderWithLocals, server, url, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extension, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, relyingPartyUrl, renderWithLocals, server, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -12,6 +12,7 @@
   Pusher = require('node-pusher');
   Helpers = require('./lib/helpers');
   User = require('./lib/user');
+  Buffset = require('./lib/buffset');
   port = process.env.PORT || 4000;
   pusher = null;
   channel = 'test_channel';
@@ -234,6 +235,9 @@
     });
   });
   app.get('/users/:id', function(request, response, next) {
+    return response.redirect("/users/" + request.params.id + "/buffsets");
+  });
+  app.get('/users/:id/buffsets', function(request, response, next) {
     return User.findOne({
       _id: request.params.id
     }, function(user) {
@@ -316,9 +320,18 @@
     return User.withCurrentUser(request.session, function(currentUser) {
       if (authorizedToEdit(currentUser, request.params.id)) {
         return currentUser.update(request.body.user, false, function(error) {
-          if (request.body.user.buffset_type) {
-            push(currentUser.pusherData(1));
-          }
+          return response.redirect('/users');
+        });
+      } else {
+        return response.redirect('back');
+      }
+    });
+  });
+  app.post('/users/:id/buffsets/create', function(request, response, next) {
+    return User.withCurrentUser(request.session, function(currentUser) {
+      if (authorizedToEdit(currentUser, request.params.id)) {
+        return Buffset.create(request.params.id, request.body.user.buffset_type, function() {
+          push(currentUser.pusherData(1));
           return response.redirect('/users');
         });
       } else {

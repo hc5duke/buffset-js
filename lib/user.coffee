@@ -86,10 +86,6 @@ class User
     if options.team?
       team = options.team
       updates.$set.team = team if team == 0 || team == 1
-    # should really be in buffset#create not here
-    if options.buffset_type?
-      buffset = new Buffset @_id, options.buffset_type
-      return callback()
     if admin
       updates.$set.active     = options.active != '0' if options.active?
       updates.$set.name       = options.name

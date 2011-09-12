@@ -10,6 +10,7 @@ _ = require 'underscore'
 Pusher = require 'node-pusher'
 Helpers = require './lib/helpers'
 User = require './lib/user'
+Buffset = require './lib/buffset'
 port = process.env.PORT || 4000
 pusher = null
 channel = 'test_channel'
@@ -171,6 +172,10 @@ app.get '/users', (request, response, next) ->
 
 
 app.get '/users/:id', (request, response, next) ->
+  response.redirect "/users/#{request.params.id}/buffsets"
+
+
+app.get '/users/:id/buffsets', (request, response, next) ->
   User.findOne _id: request.params.id, (user) ->
     return response.redirect '/users' if !user
     User.withCurrentUser request.session, (currentUser) ->
@@ -215,8 +220,16 @@ app.post '/users/:id', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, request.params.id)
       currentUser.update request.body.user, false, (error) ->
-        if request.body.user.buffset_type
-          push currentUser.pusherData(1)
+        response.redirect '/users'
+    else
+      response.redirect 'back'
+
+
+app.post '/users/:id/buffsets/create', (request, response, next) ->
+  User.withCurrentUser request.session, (currentUser) ->
+    if authorizedToEdit(currentUser, request.params.id)
+      Buffset.create request.params.id, request.body.user.buffset_type, () ->
+        push currentUser.pusherData(1)
         response.redirect '/users'
     else
       response.redirect 'back'
