@@ -1,66 +1,47 @@
+mixin teamScores(name, users, score)
+  h3 #{name} (#{score})
+  - each user in users
+    - myUser = (currentUser && user._id == String(currentUser._id))
+    - user_id = myUser ? 'current_user' : "user_" + user._id
+    .user(id=user_id)
+      .handle
+        a(href = '/users/' + user._id)= user.handle
+      - if (myUser)
+        .count#edit_current_user
+          a(href = '#')= user.tally()
+        .hidden#edit_current_user_form
+          .center
+            form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+              input(type="hidden", name="user[buffset_type]", value="pushup")
+              input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
+            form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+              input(type="hidden", name="user[buffset_type]", value="situp")
+              input.btn.primary#user_submit(name="commit", type="submit", value="30 Sit-ups")
+            form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
+              input(type="hidden", name="user[buffset_type]", value="pullup")
+              input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
+          .clear
+          input.btn#cancel_edit(type="submit", value="cancel")
+      - else
+        .count= user.tally()
+
 !!! 5
 html
   include ../includes/head
   body
     include ../includes/toolbar
     .container#body
-      #season-number-outside
-        #season-number 3
-      #container
+      #body-top
+        #season-number-outside
+          #season-number 3
+      #body-middle
         #users.text
           - if ( currentUser && ! currentUser.active)
             h3.warn Your account has not been activated yet. Go yell at Hwan-Joon until it is.
           section#prod
-            h3 Dev + Prod (#{scores[0]})
-            - each user in teams[0]
-              - myUser = (currentUser && user._id == String(currentUser._id))
-              - user_id = myUser ? 'current_user' : "user_" + user._id
-              .user(id=user_id)
-                .handle
-                  a(href = '/users/' + user._id)= user.handle
-                - if (myUser)
-                  .count#edit_current_user
-                    a(href = '#')= user.tally()
-                  .hidden#edit_current_user_form
-                    .center
-                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                        input(type="hidden", name="user[buffset_type]", value="pushup")
-                        input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
-                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                        input(type="hidden", name="user[buffset_type]", value="situp")
-                        input.btn.primary#user_submit(name="commit", type="submit", value="30 Sit-ups")
-                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                        input(type="hidden", name="user[buffset_type]", value="pullup")
-                        input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
-                    .clear
-                    input.btn#cancel_edit(type="submit", value="cancel")
-                - else
-                  .count= user.tally()
+            mixin teamScores('Dev + Prod', teams[0], scores[0])
           section#sales
-            h3 Sales + Mktg (#{scores[1]})
-            - each user in teams[1]
-              - myUser = (currentUser && user._id == String(currentUser._id))
-              - user_id = myUser ? 'current_user' : "user_" + user._id
-              .user(id=user_id)
-                .handle
-                  a(href = '/users/' + user._id)= user.handle
-                - if (myUser)
-                  .count#edit_current_user
-                    a(href = '#')= user.tally()
-                  .hidden#edit_current_user_form
-                    .center
-                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                        input(type="hidden", name="user[buffset_type]", value="pushup")
-                        input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
-                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                        input(type="hidden", name="user[buffset_type]", value="situp")
-                        input.btn.primary#user_submit(name="commit", type="submit", value="30 Sit-ups")
-                      form.edit_user(action="/users/#{user._id}", method="post", id='edit_user' + user._id)
-                        input(type="hidden", name="user[buffset_type]", value="pullup")
-                        input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
-                    .clear
-                    input.btn#cancel_edit(type="submit", value="cancel")
-                - else
-                  .count= user.tally()
+            mixin teamScores('Sales + Mktg', teams[1], scores[1])
         .clear
+      #body-bottom
     include ../includes/footer

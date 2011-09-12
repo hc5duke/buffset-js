@@ -33,20 +33,34 @@ h3.warn {
   color: white;
 }
 #body {
-  width: 878px;
-  height: 677px;
-  margin: 0px auto;
-  background-image: url(https://s3.amazonaws.com/dev_tapjoy/buffsets/buffsets.jpg);
-  background-repeat: no-repeat;
+  width: 868px;
+  min-height: 677px;
+  margin: 0 auto;
   text-align: center;
 }
+#body-top {
+  height: 180px;
+  background-image: url(https://s3.amazonaws.com/dev_tapjoy/buffsets/buffsets-top.jpg);
+  background-repeat: no-repeat;
+}
+#body-middle {
+  min-height: 400px;
+  background-image: url(https://s3.amazonaws.com/dev_tapjoy/buffsets/buffsets-middle.jpg);
+  background-repeat: no-repeat;
+  background-size: 868px 100%;
+}
+#body-bottom {
+  height: 200px;
+  background-image: url(https://s3.amazonaws.com/dev_tapjoy/buffsets/buffsets-bottom.jpg);
+  background-repeat: no-repeat;
+}
 #prod {
-  width: 475px;
+  width: 420px;
   float: left;
   border-right: 3px solid #0c7579;
 }
 #sales {
-  width: 275px;
+  width: 300px;
   float: right;
 }
 .clear {
@@ -63,7 +77,7 @@ h3.warn {
   font-family: 'Walter Turncoat', cursive, arial;
 }
 .text {
-  padding: 170px 60px 0px;
+  padding: 0px 60px;
   font-family: 'Walter Turncoat', cursive, arial;
   font-size: 30px;
   line-height: 32px;
