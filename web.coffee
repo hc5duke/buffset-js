@@ -198,8 +198,9 @@ app.get '/users/:id/edit', (request, response, next) ->
 app.get '/admin/users', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, '', true)
-      User.findAll active: true, (activeUsers) ->
-        User.findAll active: {$ne: true}, (inactiveUsers) ->
+      userOrder = {team: 1, name: 1}
+      User.findAll active: true, userOrder, (activeUsers) ->
+        User.findAll active: {$ne: true}, userOrder, (inactiveUsers) ->
           locals =
             title: 'Users'
             activeUsers: activeUsers

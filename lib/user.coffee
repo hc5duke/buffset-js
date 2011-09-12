@@ -140,9 +140,13 @@ User.findOne = (conditions, callback) ->
       else
         callback false
 
-User.findAll = (conditions, callback) ->
+User.findAll = (conditions, order, callback) ->
+  if typeof order == 'function'
+    callback = order
+    order = {}
+  order ||= {}
   @db.collection 'users', (error, users) ->
-    users.find(conditions).toArray (error, allUsers) ->
+    users.find(conditions).sort(order).toArray (error, allUsers) ->
       if error
         callback false
       else

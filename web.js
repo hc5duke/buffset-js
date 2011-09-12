@@ -283,15 +283,20 @@
   });
   app.get('/admin/users', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
+      var userOrder;
       if (authorizedToEdit(currentUser, '', true)) {
+        userOrder = {
+          team: 1,
+          name: 1
+        };
         return User.findAll({
           active: true
-        }, function(activeUsers) {
+        }, userOrder, function(activeUsers) {
           return User.findAll({
             active: {
               $ne: true
             }
-          }, function(inactiveUsers) {
+          }, userOrder, function(inactiveUsers) {
             var locals;
             locals = {
               title: 'Users',
