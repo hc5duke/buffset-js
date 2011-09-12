@@ -135,7 +135,7 @@ app.get '/authenticate', (request, response) ->
 app.get '/verify', (request, response, next) ->
   relyingParty.verifyAssertion request, (error, result) ->
     return response.send 'Failure :(' if error || !result.authenticated
-    service = Helpers.newService result
+    service = User.newService result
     User.findOne 'services.uid': service.uid, (user) ->
       if user
         # 1: existing user, log in

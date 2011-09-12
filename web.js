@@ -172,7 +172,7 @@
       if (error || !result.authenticated) {
         return response.send('Failure :(');
       }
-      service = Helpers.newService(result);
+      service = User.newService(result);
       return User.findOne({
         'services.uid': service.uid
       }, function(user) {

@@ -130,6 +130,12 @@ User.create = (data, service, callback) ->
     users.insert user, safe: true, (error, newUsers) ->
       callback new User newUsers[0]
 
+User.newService = (result) ->
+  provider: 'google'
+  uemail: result.email
+  uid: result.claimedIdentifier
+  uname: [result.firstname, result.lastname].join ' '
+
 User.findOne = (conditions, callback) ->
   if typeof(conditions) == 'string'
     conditions = _id: conditions
