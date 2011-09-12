@@ -184,7 +184,7 @@ if (window.webkitNotifications) {
     var count = data.count;
     var tally = data.tally;
     var content;
-    if (data.abuse) {
+    if (Buffsets.wantsAbuse) {
       var index = Math.floor(Math.random() * discouragements.length);
       content = discouragements[index];
     } else {
@@ -235,3 +235,5 @@ channel.bind('my_event', function(data) {
     update(data);
   }
 });
+
+var Buffsets = {};

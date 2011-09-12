@@ -9,26 +9,33 @@ html
           #season-number 3
       #body-middle
         section#edit-user.text
+          h2 Edit user
           form.edit_user(action="/users/" + user._id, method="post")
-            fieldset
-              legend Edit user
-              .clearfix
-                label(value='user_email') Email
-                = user.email
-              .clearfix
-                label(value='user_handle') Handle
-                input#user_handle.xlarge(type='text', value=user.handle, name='user[handle]', maxlength=8)
-              .clearfix
-                label(value='user_abuse') Abusive language?
-                input#user_abuse(type="hidden", name="user[abuse]", value="0")
-                input#user_abuse(type="checkbox", name="user[abuse]", value="1", checked=user.abuse)
-              .clearfix
-                .row
-                  .span1.columns &nbsp;
-                  .span4.columns
-                    input.btn.large(type='button', value='Cancel', onclick='javascript:history.back();')
-                  .span4.columns
-                    input.btn.large.primary#user_submit(type='submit', value='Update User')
-                  .span3.columns &nbsp;
+            table
+              tbody
+                tr
+                  td
+                    label Email
+                  td
+                    label=user.email
+                tr
+                  td
+                    label(value='user_handle') Handle
+                  td
+                    input#user_handle.xlarge(type='text', value=user.handle, name='user[handle]', maxlength=8)
+                tr
+                  td
+                    label(value='user_abuse') Allow abusive language?
+                  td
+                    select#user_abuse(name="user[abuse]")
+                      option(value=0, selected=(user.abuse)) Yes
+                      option(value=1, selected=(!user.abuse)) No
+            .row
+              .span1.columns &nbsp;
+              .span4.columns
+                input.btn.large(type='button', value='Cancel', onclick='javascript:history.back();')
+              .span4.columns
+                input.btn.large.primary#user_submit(type='submit', value='Update User')
+              .span3.columns &nbsp;
       #body-bottom
     include ../includes/footer

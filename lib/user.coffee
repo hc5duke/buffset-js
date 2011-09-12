@@ -74,7 +74,6 @@ class User
     name: @name
     count: @buffsets.length + offset
     tally: @tally(offset)
-    abuse: @abuse
 
   update: (options, admin, callback) ->
     conditions = _id: @_id
