@@ -4,8 +4,8 @@ html
   body
     include ../includes/toolbar
     #container.fullsize
+    #pie_container.fullsize
     - if (currentUser.admin && typeof(user) != 'undefined')
-      #pie_container.fullsize
       #data
         - each buffset in user.buffsets
           = buffset._id
@@ -24,7 +24,7 @@ html
         }
       }
       createChart(series);
-    - if (currentUser.admin && typeof(user) != 'undefined')
+    - if (typeof(user) != 'undefined')
       script
         var pieData = $.parseJSON('#{JSON.stringify(pieData)}'.replace(/&quot;/g, '"'));
         var pieSeries = [{ type: 'pie', name: '', data: pieData }];
