@@ -206,7 +206,7 @@ app.get '/users/:id/edit', (request, response, next) ->
         id = new db.bson_serializer.ObjectID(request.params.id)
         users.findOne _id: id, (error, user) ->
           next error if error
-          locals = title: 'User ' + user.name, user: user, currentUser: currentUser
+          locals = title: 'User ' + user.name, user: user, currentUser: currentUser, teamNames: teamNames
           renderWithLocals locals, 'users/edit', next, response
     else
       response.redirect '/users/' + request.params.id

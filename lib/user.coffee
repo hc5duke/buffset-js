@@ -87,7 +87,7 @@ class User
       handle = options.handle
       updates.$set.handle = handle.replace(/^\s*/, '')[0..7].replace(/\s*$/, '')
     if options.team?
-      team = options.team
+      team = Number(options.team)
       updates.$set.team = team if team == 0 || team == 1
     if admin
       updates.$set.active     = options.active != '0' if options.active?

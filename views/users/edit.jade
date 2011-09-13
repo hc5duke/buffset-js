@@ -25,6 +25,13 @@ html
                     input#user_handle.xlarge(type='text', value=user.handle, name='user[handle]', maxlength=8)
                 tr
                   td
+                    label(value='user_team') Team
+                  td
+                    select#user_team(name="user[team]")
+                      option(value=0, selected=(user.team == 0))= teamNames[0]
+                      option(value=1, selected=(user.team == 1))= teamNames[1]
+                tr
+                  td
                     label(value='user_abuse') Allow abusive language?
                   td
                     select#user_abuse(name="user[abuse]")

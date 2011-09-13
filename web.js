@@ -290,7 +290,8 @@
             locals = {
               title: 'User ' + user.name,
               user: user,
-              currentUser: currentUser
+              currentUser: currentUser,
+              teamNames: teamNames
             };
             return renderWithLocals(locals, 'users/edit', next, response);
           });
