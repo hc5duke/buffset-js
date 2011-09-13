@@ -20,6 +20,9 @@ mixin teamScores(team)
             form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
               input(type="hidden", name="user[buffset_type]", value="pullup")
               input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
+            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
+              input(type="hidden", name="user[buffset_type]", value="wallsits")
+              input.btn.primary#user_submit(name="commit", type="submit", value="Wall sit")
           .clear
           input.btn#cancel_edit(type="submit", value="cancel")
       - else
