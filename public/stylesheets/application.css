@@ -11,6 +11,11 @@ input {
 .small {
   font-size: 14px;
 }
+.halfsize {
+  width: 40%;
+  float: left;
+  height: 600px;
+}
 .fullsize {
   height: 600px;
 }

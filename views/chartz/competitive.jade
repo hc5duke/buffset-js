@@ -4,7 +4,11 @@ html
   body
     include ../includes/toolbar
     #container.fullsize
-    #pie_container.fullsize
+    - if (typeof(pieData) != 'undefined')
+      #pie_container.fullsize
+      #pie_left.halfsize
+      #pie_right.halfsize
+      .clear
     - if (currentUser.admin && typeof(user) != 'undefined')
       #data
         - each buffset in user.buffsets
@@ -18,8 +22,6 @@ html
     script
       var series = $.parseJSON('#{JSON.stringify(series)}'.replace(/&quot;/g, '"'));
       var pieData = $.parseJSON('#{JSON.stringify(pieData)}'.replace(/&quot;/g, '"'));
-      var pieSeries = [{ type: 'pie', name: '', data: pieData }];
-      var title = 'Buffset Pie Chart';
       for (var ser in series) {
         var data = series[ser].data;
         for (var arr in data) {
@@ -27,4 +29,17 @@ html
         }
       }
       createChart(series);
-      createPieChart(pieSeries, title);
+      if (pieData.size == 1) {
+        var pieSeries = [{ type: 'pie', name: '', data: pieData.data }];
+        var title = 'Buffset Pie Chart';
+        createPieChart(pieSeries, title);
+        $('#pie_right, #pie_left').hide();
+      } else {
+        var pieSeries = [{ type: 'pie', name: '', data: pieData.data[0] }];
+        var title = pieData.teamNames[0];
+        createPieChart(pieSeries, title, 'pie_left');
+        pieSeries = [{ type: 'pie', name: '', data: pieData.data[1] }];
+        title = pieData.teamNames[1];
+        createPieChart(pieSeries, title, 'pie_right');
+        $('#pie_container').hide();
+      }

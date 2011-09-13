@@ -193,7 +193,9 @@ app.get '/users/:id/buffsets', (request, response, next) ->
         currentUser: currentUser
         user: user
         series: [ user.buffsetData() ]
-        pieData: user.buffsetPieData()
+        pieData:
+          size: 1
+          data: user.buffsetPieData()
       renderWithLocals locals, 'chartz/competitive', next, response
 
 app.get '/users/:id/edit', (request, response, next) ->
@@ -263,7 +265,9 @@ app.get '/chartz', (request, response, next) ->
         activeUsers: activeUsers
         currentUser: currentUser
         series: series
-        pieData: User.combinedBuffsetPieData(activeUsers)
+        pieData:
+          size: 1
+          data: User.combinedBuffsetPieData(activeUsers)
       renderWithLocals locals, 'chartz/competitive', next, response
 
 
@@ -287,7 +291,13 @@ app.get '/chartz/team', (request, response, next) ->
         activeUsers: activeUsers
         currentUser: currentUser
         series: series
-        pieData: User.combinedBuffsetPieData(activeUsers)
+        pieData:
+          size: 2
+          teamNames: teamNames
+          data: [
+            User.combinedBuffsetPieData(teams[0])
+            User.combinedBuffsetPieData(teams[1])
+          ]
       renderWithLocals locals, 'chartz/competitive', next, response
 
 

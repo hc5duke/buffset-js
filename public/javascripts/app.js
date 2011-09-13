@@ -131,10 +131,10 @@ var createStackedChart = function(categories, series) {
     series: series
   });
 };
-var createPieChart = function(series, title) {
+var createPieChart = function(series, title, container) {
   var chart = new Highcharts.Chart({
     chart: {
-      renderTo: 'pie_container',
+      renderTo: container || 'pie_container',
       plotBackgroundColor: null,
       plotBorderWidth: null,
       plotShadow: false

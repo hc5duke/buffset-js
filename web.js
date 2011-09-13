@@ -262,7 +262,10 @@
           currentUser: currentUser,
           user: user,
           series: [user.buffsetData()],
-          pieData: user.buffsetPieData()
+          pieData: {
+            size: 1,
+            data: user.buffsetPieData()
+          }
         };
         return renderWithLocals(locals, 'chartz/competitive', next, response);
       });
@@ -376,7 +379,10 @@
           activeUsers: activeUsers,
           currentUser: currentUser,
           series: series,
-          pieData: User.combinedBuffsetPieData(activeUsers)
+          pieData: {
+            size: 1,
+            data: User.combinedBuffsetPieData(activeUsers)
+          }
         };
         return renderWithLocals(locals, 'chartz/competitive', next, response);
       });
@@ -415,7 +421,11 @@
           activeUsers: activeUsers,
           currentUser: currentUser,
           series: series,
-          pieData: User.combinedBuffsetPieData(activeUsers)
+          pieData: {
+            size: 2,
+            teamNames: teamNames,
+            data: [User.combinedBuffsetPieData(teams[0]), User.combinedBuffsetPieData(teams[1])]
+          }
         };
         return renderWithLocals(locals, 'chartz/competitive', next, response);
       });
