@@ -375,7 +375,8 @@
           title: 'Competitive Chartz',
           activeUsers: activeUsers,
           currentUser: currentUser,
-          series: series
+          series: series,
+          pieData: User.combinedBuffsetPieData(activeUsers)
         };
         return renderWithLocals(locals, 'chartz/competitive', next, response);
       });
@@ -413,7 +414,8 @@
           title: 'Competitive Chartz',
           activeUsers: activeUsers,
           currentUser: currentUser,
-          series: series
+          series: series,
+          pieData: User.combinedBuffsetPieData(activeUsers)
         };
         return renderWithLocals(locals, 'chartz/competitive', next, response);
       });

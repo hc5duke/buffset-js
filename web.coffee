@@ -263,6 +263,7 @@ app.get '/chartz', (request, response, next) ->
         activeUsers: activeUsers
         currentUser: currentUser
         series: series
+        pieData: User.combinedBuffsetPieData(activeUsers)
       renderWithLocals locals, 'chartz/competitive', next, response
 
 
@@ -286,6 +287,7 @@ app.get '/chartz/team', (request, response, next) ->
         activeUsers: activeUsers
         currentUser: currentUser
         series: series
+        pieData: User.combinedBuffsetPieData(activeUsers)
       renderWithLocals locals, 'chartz/competitive', next, response
 
 

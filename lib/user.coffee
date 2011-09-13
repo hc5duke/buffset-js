@@ -24,11 +24,7 @@ class User
     name: @handle, data: data
 
   buffsetPieData: () ->
-    groups = _.groupBy @buffsets, (buffset) -> buffset.type
-    data = []
-    _.each groups, (group, type) ->
-      data.push [type, group.length]
-    data = _.sortBy data, (d) -> -d[1]
+    User.buffsetPieData @buffsets
 
   tally: (offset) ->
     fives = (num, unit, one, five, ten) ->
@@ -185,5 +181,17 @@ User.withChartableUsers = (callback) ->
       return
     activeUsers = _.sortBy activeUsers, (user) -> - user.buffsets.length
     callback(activeUsers)
+
+User.buffsetPieData = (buffsets) ->
+  groups = _.groupBy buffsets, (buffset) -> buffset.type
+  data = []
+  _.each groups, (group, type) ->
+    data.push [type, group.length]
+  data = _.sortBy data, (d) -> -d[1]
+
+User.combinedBuffsetPieData = (users) ->
+  buffsets = _.map users, (user) ->
+    user.buffsets
+  @buffsetPieData _.flatten buffsets
 
 module.exports = User

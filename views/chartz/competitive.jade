@@ -17,6 +17,9 @@ html
     include ../includes/footer
     script
       var series = $.parseJSON('#{JSON.stringify(series)}'.replace(/&quot;/g, '"'));
+      var pieData = $.parseJSON('#{JSON.stringify(pieData)}'.replace(/&quot;/g, '"'));
+      var pieSeries = [{ type: 'pie', name: '', data: pieData }];
+      var title = 'Buffset Pie Chart';
       for (var ser in series) {
         var data = series[ser].data;
         for (var arr in data) {
@@ -24,9 +27,4 @@ html
         }
       }
       createChart(series);
-    - if (typeof(user) != 'undefined')
-      script
-        var pieData = $.parseJSON('#{JSON.stringify(pieData)}'.replace(/&quot;/g, '"'));
-        var pieSeries = [{ type: 'pie', name: '', data: pieData }];
-        var title = 'Buffset Pie Chart';
-        createPieChart(pieSeries, title);
+      createPieChart(pieSeries, title);
