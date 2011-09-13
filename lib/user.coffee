@@ -9,9 +9,9 @@ class User
     @admin      = !!user.admin
     @female     = !!user.female
     @abuse      = !!user.abuse
-    @email      = user.email
-    @handle     = user.handle
-    @name       = user.name
+    @email      = String(user.email)
+    @handle     = String(user.handle)
+    @name       = String(user.name)
     @buffsets   = user.buffsets || []
     @services   = user.services || []
     @team       = Number(user.team || 0)

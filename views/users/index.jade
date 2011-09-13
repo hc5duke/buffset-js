@@ -5,10 +5,10 @@ mixin teamScores(team)
     - user_id = myUser ? 'current_user' : "user_" + user._id
     .user(id=user_id)
       .handle
-        a(href = '/users/' + user._id)= user.handle
+        a(href='/users/' + user._id, title=user.name)= user.handle
       - if (myUser)
         .count#edit_current_user
-          a(href = '#')= user.tally()
+          a(href='#')= user.tally()
         .hidden#edit_current_user_form
           .center
             form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
