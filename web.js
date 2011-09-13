@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extension, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, relyingPartyUrl, renderWithLocals, server, url, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extension, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, relyingPartyUrl, renderWithLocals, server, teamNames, url, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -18,6 +18,7 @@
   channel = 'test_channel';
   event = 'my_event';
   relyingPartyUrl = 'https://buffsets.tapjoy.com/verify';
+  teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
   push = function(data) {
     data._source = relyingPartyUrl.split(/\/+/)[1];
     if (pusher) {
@@ -218,16 +219,26 @@
       });
       allUsers = _.flatten(allUsers).reverse();
       return User.withCurrentUser(request.session, function(currentUser) {
-        var locals, scores, teams;
+        var locals, members, scores, teams;
         scores = [0, 0];
-        teams = _.groupBy(allUsers, function(user) {
+        members = _.groupBy(allUsers, function(user) {
           scores[user.team] += user.buffsets.length;
           return user.team;
         });
+        teams = [
+          {
+            name: teamNames[0],
+            score: scores[0],
+            users: members[0]
+          }, {
+            name: teamNames[1],
+            score: scores[1],
+            users: members[1]
+          }
+        ];
         locals = {
           title: 'Users',
           teams: teams,
-          scores: scores,
           currentUser: currentUser
         };
         return renderWithLocals(locals, 'users/index', next, response);
@@ -306,7 +317,8 @@
               title: 'Users',
               activeUsers: activeUsers,
               inactiveUsers: inactiveUsers,
-              currentUser: currentUser
+              currentUser: currentUser,
+              teamNames: teamNames
             };
             return renderWithLocals(locals, 'admin/users/index', next, response);
           });
@@ -371,12 +383,11 @@
   app.get('/chartz/team', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
       return User.withChartableUsers(function(activeUsers) {
-        var index, locals, series, teamNames, teams;
+        var index, locals, series, teams;
         teams = _.groupBy(activeUsers, function(user) {
           return user.team;
         });
         index = -1;
-        teamNames = ['Dev/Prod', 'Sales/Mktg'];
         series = _.map(teams, function(team) {
           var buffsets, currentCount, data;
           buffsets = _.map(team, function(user) {

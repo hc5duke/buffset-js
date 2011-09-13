@@ -16,6 +16,11 @@ pusher = null
 channel = 'test_channel'
 event = 'my_event'
 relyingPartyUrl = 'https://buffsets.tapjoy.com/verify'
+teamNames = [
+  process.env.TEAM_1_NAME || 'Amir'
+  process.env.TEAM_2_NAME || 'Johnny'
+]
+
 
 push = (data) ->
   data._source = relyingPartyUrl.split(/\/+/)[1]
@@ -164,10 +169,14 @@ app.get '/users', (request, response, next) ->
     allUsers = _.flatten(allUsers).reverse()
     User.withCurrentUser request.session, (currentUser) ->
       scores = [0, 0]
-      teams = _.groupBy allUsers, (user) ->
+      members = _.groupBy allUsers, (user) ->
         scores[user.team] += user.buffsets.length
         user.team
-      locals = title: 'Users', teams: teams, scores: scores, currentUser: currentUser
+      teams = [
+        {name: teamNames[0], score: scores[0], users: members[0]}
+        {name: teamNames[1], score: scores[1], users: members[1]}
+      ]
+      locals = title: 'Users', teams: teams, currentUser: currentUser
       renderWithLocals locals, 'users/index', next, response
 
 
@@ -211,6 +220,7 @@ app.get '/admin/users', (request, response, next) ->
             activeUsers: activeUsers
             inactiveUsers: inactiveUsers
             currentUser: currentUser
+            teamNames: teamNames
           renderWithLocals locals, 'admin/users/index', next, response
     else
       response.redirect '/users'
@@ -260,7 +270,6 @@ app.get '/chartz/team', (request, response, next) ->
     User.withChartableUsers (activeUsers) ->
       teams = _.groupBy activeUsers, (user) -> user.team
       index = -1
-      teamNames = ['Dev/Prod', 'Sales/Mktg']
       series = _.map teams, (team) ->
         buffsets = _.map team, (user) -> user.buffsets
         buffsets = _.flatten buffsets
