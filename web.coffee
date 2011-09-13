@@ -193,6 +193,7 @@ app.get '/users/:id/buffsets', (request, response, next) ->
         currentUser: currentUser
         user: user
         series: [ user.buffsetData() ]
+        pieData: user.buffsetPieData()
       renderWithLocals locals, 'chartz/competitive', next, response
 
 app.get '/users/:id/edit', (request, response, next) ->

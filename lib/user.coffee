@@ -23,6 +23,13 @@ class User
       [ buffset.created_at, currentCount ]
     name: @handle, data: data
 
+  buffsetPieData: () ->
+    groups = _.groupBy @buffsets, (buffset) -> buffset.type
+    data = []
+    _.each groups, (group, type) ->
+      data.push [type, group.length]
+    data = _.sortBy data, (d) -> -d[1]
+
   tally: (offset) ->
     fives = (num, unit, one, five, ten) ->
       str = []

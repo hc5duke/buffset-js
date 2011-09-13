@@ -261,7 +261,8 @@
           title: 'Competitive Chartz',
           currentUser: currentUser,
           user: user,
-          series: [user.buffsetData()]
+          series: [user.buffsetData()],
+          pieData: user.buffsetPieData()
         };
         return renderWithLocals(locals, 'chartz/competitive', next, response);
       });
