@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pushData, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pushData, pusher, pusherChannel, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -16,24 +16,25 @@
   port = process.env.PORT || 4000;
   verifyUrl = 'https://buffsets.tapjoy.com/verify';
   teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
-  pusher = null;
-  channel = 'tapjoy_channel';
+  pusherChannel = 'tapjoy_channel';
+  pusherConfig = [];
+  pusherConfig[7] = '7999';
+  pusherConfig[3] = '9e3138091756a4f921d0';
+  pusherConfig[4] = '584c00ebe3703b0df7c1';
+  if (process.env.PUSHER_URL) {
+    pusherConfig = process.env.PUSHER_URL.split(/:|@|\//);
+  }
+  pusher = new Pusher({
+    appId: pusherConfig[7],
+    key: pusherConfig[3],
+    secret: pusherConfig[4]
+  });
   pushData = function(event, data) {
     data._source = verifyUrl.split(/\/+/)[1];
     if (pusher) {
-      return pusher.trigger(channel, event, data);
+      return pusher.trigger(pusherChannel, event, data);
     }
   };
-  if (process.env.PUSHER_URL) {
-    pusherConfig = process.env.PUSHER_URL.split(/:|@|\//);
-    pusher = new Pusher({
-      appId: pusherConfig[7],
-      key: pusherConfig[3],
-      secret: pusherConfig[4]
-    });
-  } else {
-    console.log("WARNING: no Pusher");
-  }
   Server = mongo.Server;
   Db = mongo.Db;
   RedisStore = redis(express);

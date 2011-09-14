@@ -19,20 +19,16 @@ teamNames   = [
   process.env.TEAM_2_NAME || 'Johnny'
 ]
 
-pusher    = null
-channel   = 'tapjoy_channel'
+pusherChannel   = 'tapjoy_channel'
+pusherConfig = []
+pusherConfig[7] = '7999' # dev account
+pusherConfig[3] = '9e3138091756a4f921d0'
+pusherConfig[4] = '584c00ebe3703b0df7c1'
+pusherConfig = process.env.PUSHER_URL.split(/:|@|\//) if process.env.PUSHER_URL
+pusher = new Pusher appId: pusherConfig[7], key: pusherConfig[3], secret: pusherConfig[4]
 pushData  = (event, data) ->
   data._source = verifyUrl.split(/\/+/)[1]
-  pusher.trigger channel, event, data if pusher
-
-if process.env.PUSHER_URL
-  pusherConfig = process.env.PUSHER_URL.split(/:|@|\//)
-  pusher = new Pusher
-    appId:  pusherConfig[7]
-    key:    pusherConfig[3]
-    secret: pusherConfig[4]
-else
-  console.log "WARNING: no Pusher"
+  pusher.trigger pusherChannel, event, data if pusher
 
 Server = mongo.Server
 Db = mongo.Db
@@ -388,7 +384,6 @@ app.get '/chartz/punch', (request, response, next) ->
           currentUser: currentUser
           chart_url: chart_url
         renderWithLocals locals, 'chartz/punchcard', next, response
-
 
 
 app.listen port, ->
