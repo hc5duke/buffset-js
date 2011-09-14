@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, event, express, extension, jade, mongo, openid, port, push, pusher, pusherConfig, querystring, redis, relyingParty, relyingPartyUrl, renderWithLocals, server, teamNames, url, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, channel, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pushData, pusher, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -14,13 +14,12 @@
   User = require('./lib/user');
   Buffset = require('./lib/buffset');
   port = process.env.PORT || 4000;
-  pusher = null;
-  channel = 'test_channel';
-  event = 'my_event';
-  relyingPartyUrl = 'https://buffsets.tapjoy.com/verify';
+  verifyUrl = 'https://buffsets.tapjoy.com/verify';
   teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
-  push = function(data) {
-    data._source = relyingPartyUrl.split(/\/+/)[1];
+  pusher = null;
+  channel = 'tapjoy_channel';
+  pushData = function(event, data) {
+    data._source = verifyUrl.split(/\/+/)[1];
     if (pusher) {
       return pusher.trigger(channel, event, data);
     }
@@ -64,7 +63,7 @@
         maxAge: oneYear
       })
     }));
-    return relyingPartyUrl = 'http://localhost:' + port + '/verify';
+    return verifyUrl = 'http://localhost:' + port + '/verify';
   });
   app.configure('production', function() {
     var oneYear, redisConfig, x, _ref;
@@ -90,7 +89,7 @@
     "http://axschema.org/namePerson/first": "required",
     "http://axschema.org/namePerson/last": "required"
   });
-  relyingParty = new openid.RelyingParty(relyingPartyUrl, null, false, false, [extension]);
+  relyingParty = new openid.RelyingParty(verifyUrl, null, false, false, [extension]);
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
   });
@@ -348,7 +347,7 @@
     return User.withCurrentUser(request.session, function(currentUser) {
       if (authorizedToEdit(currentUser, request.params.id)) {
         return Buffset.create(request.params.id, request.body.user.buffset_type, function() {
-          push(currentUser.pusherData(1));
+          pushData('buffset', currentUser.pusherData(1));
           return response.redirect('/users');
         });
       } else {

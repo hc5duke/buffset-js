@@ -1,36 +1,35 @@
-express = require 'express'
-connect = require 'connect'
-openid = require 'openid'
-url = require 'url'
+express     = require 'express'
+connect     = require 'connect'
+openid      = require 'openid'
+url         = require 'url'
 querystring = require 'querystring'
-jade = require 'jade'
-mongo = require 'mongodb'
-redis = require 'connect-redis'
-_ = require 'underscore'
-Pusher = require 'node-pusher'
-Helpers = require './lib/helpers'
-User = require './lib/user'
-Buffset = require './lib/buffset'
-port = process.env.PORT || 4000
-pusher = null
-channel = 'test_channel'
-event = 'my_event'
-relyingPartyUrl = 'https://buffsets.tapjoy.com/verify'
-teamNames = [
+jade        = require 'jade'
+mongo       = require 'mongodb'
+redis       = require 'connect-redis'
+_           = require 'underscore'
+Pusher      = require 'node-pusher'
+Helpers     = require './lib/helpers'
+User        = require './lib/user'
+Buffset     = require './lib/buffset'
+
+port        = process.env.PORT || 4000
+verifyUrl   = 'https://buffsets.tapjoy.com/verify'
+teamNames   = [
   process.env.TEAM_1_NAME || 'Amir'
   process.env.TEAM_2_NAME || 'Johnny'
 ]
 
-
-push = (data) ->
-  data._source = relyingPartyUrl.split(/\/+/)[1]
+pusher    = null
+channel   = 'tapjoy_channel'
+pushData  = (event, data) ->
+  data._source = verifyUrl.split(/\/+/)[1]
   pusher.trigger channel, event, data if pusher
 
 if process.env.PUSHER_URL
   pusherConfig = process.env.PUSHER_URL.split(/:|@|\//)
   pusher = new Pusher
     appId:  pusherConfig[7]
-    key: pusherConfig[3]
+    key:    pusherConfig[3]
     secret: pusherConfig[4]
 else
   console.log "WARNING: no Pusher"
@@ -59,7 +58,7 @@ app.configure 'development', ->
     secret: "keyboard cat"
     store: new RedisStore
       maxAge: oneYear
-  relyingPartyUrl = 'http://localhost:'+port+'/verify'
+  verifyUrl = 'http://localhost:'+port+'/verify'
 
 app.configure 'production', ->
   oneYear = 31557600000
@@ -79,7 +78,7 @@ extension = new openid.AttributeExchange
   "http://axschema.org/contact/email": "required"
   "http://axschema.org/namePerson/first": "required"
   "http://axschema.org/namePerson/last": "required"
-relyingParty = new openid.RelyingParty relyingPartyUrl, null, false, false, [extension]
+relyingParty = new openid.RelyingParty verifyUrl, null, false, false, [extension]
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
@@ -242,7 +241,7 @@ app.post '/users/:id/buffsets/create', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, request.params.id)
       Buffset.create request.params.id, request.body.user.buffset_type, () ->
-        push currentUser.pusherData(1)
+        pushData 'buffset', currentUser.pusherData(1)
         response.redirect '/users'
     else
       response.redirect 'back'
