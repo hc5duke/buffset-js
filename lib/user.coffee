@@ -1,5 +1,6 @@
 _ = require 'underscore'
 Buffset = require './buffset'
+Talk = require './talk'
 
 class User
   constructor: (user) ->
@@ -104,6 +105,7 @@ class User
 User.setDb = (db) ->
   @db = db
   Buffset.setDb db
+  Talk.setDb db
 
 User.create = (data, service, callback) ->
   @db.collection 'users', (error, users) ->

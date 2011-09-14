@@ -186,6 +186,17 @@ $('#cancel_edit').click(function(){
   return false;
 });
 
+var sendText = function(){
+  var text = $('#chat_text').val();
+  $.post('/text', { text: text });
+  $('#chat_text').val('').focus();
+};
+$('#chat_submit').click(sendText);
+$('#chat_text').keypress(function(event){
+  if (event.which == 13) {
+    sendText();
+  }
+})
 $('form.new_buffset').submit(function(){
   $(this).children('input[type=submit]').attr('disabled', 'disabled');
   return true;

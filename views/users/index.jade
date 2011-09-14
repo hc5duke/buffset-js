@@ -45,4 +45,7 @@ html
             mixin teamScores(teams[1])
         .clear
       #body-bottom
+      - if (currentUser && currentUser.active)
+        input#chat_text(name='text')
+        input#chat_submit(type='submit')
     include ../includes/footer

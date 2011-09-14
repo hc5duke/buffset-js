@@ -11,6 +11,7 @@ Pusher      = require 'node-pusher'
 Helpers     = require './lib/helpers'
 User        = require './lib/user'
 Buffset     = require './lib/buffset'
+Talk        = require './lib/talk'
 
 port        = process.env.PORT || 4000
 verifyUrl   = 'https://buffsets.tapjoy.com/verify'
@@ -384,6 +385,14 @@ app.get '/chartz/punch', (request, response, next) ->
           chart_url: chart_url
         renderWithLocals locals, 'chartz/punchcard', next, response
 
+
+app.post '/talk', (request, response, next) ->
+  User.withCurrentUser request.session, (currentUser) ->
+    return response.send '401' if !currentUser? || !currentUser.active
+    talk = Talk.create currentUser, request.body.text
+    console.log request.body.text
+    pushData 'talk', talk.pusherData()
+    response.send 'ok'
 
 app.listen port, ->
   console.log "Listening on " + port

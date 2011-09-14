@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pushData, pusher, pusherChannel, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, Talk, User, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pushData, pusher, pusherChannel, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -13,6 +13,7 @@
   Helpers = require('./lib/helpers');
   User = require('./lib/user');
   Buffset = require('./lib/buffset');
+  Talk = require('./lib/talk');
   port = process.env.PORT || 4000;
   verifyUrl = 'https://buffsets.tapjoy.com/verify';
   teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
@@ -544,6 +545,18 @@
           return renderWithLocals(locals, 'chartz/punchcard', next, response);
         });
       });
+    });
+  });
+  app.post('/talk', function(request, response, next) {
+    return User.withCurrentUser(request.session, function(currentUser) {
+      var talk;
+      if (!(currentUser != null) || !currentUser.active) {
+        return response.send('401');
+      }
+      talk = Talk.create(currentUser, request.body.text);
+      console.log(request.body.text);
+      pushData('talk', talk.pusherData());
+      return response.send('ok');
     });
   });
   app.listen(port, function() {

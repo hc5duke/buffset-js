@@ -58,7 +58,7 @@ h3.warn {
   background-size: 868px 100%;
 }
 #body-bottom {
-  height: 200px;
+  height: 100px;
   background-image: url(https://s3.amazonaws.com/dev_tapjoy/buffsets/buffsets-bottom.jpg);
   background-repeat: no-repeat;
 }
