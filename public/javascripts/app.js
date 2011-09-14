@@ -261,14 +261,21 @@ if (window.webkitNotifications) {
 }
 
 var pusher = new Pusher('ee24436a8c23a9f95d03');
-var channel = pusher.subscribe('test_channel');
-channel.bind('my_event', function(data) {
+var channel = pusher.subscribe('tapjoy_channel');
+channel.bind('buffset', function(data) {
   var domain = location.href.split(/\/+/)[1];
   if (domain == data._source) {
     var find = '#user_' + data.id + ' .count';
     $(find).text(data.tally);
-    update(data);
+    if (Buffsets.currentUserId && Buffsets.currentUserId == data.id) {
+      // myself
+    } else {
+      update(data);
+    }
   }
+});
+channel.bind('talk', function(data) {
+  console.log(data);
 });
 
 var Buffsets = {};
