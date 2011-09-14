@@ -238,7 +238,7 @@ if (window.webkitNotifications) {
     notification.show();
     setTimeout(function() {
       notification.cancel();
-    }, 15000);
+    }, 5000);
   };
 
   var encouragements = [
