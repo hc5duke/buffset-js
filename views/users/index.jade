@@ -1,3 +1,7 @@
+mixin buffset(user, type, label)
+  form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
+    input(type="hidden", name="user[buffset_type]", value=type)
+    input.btn.primary#user_submit(name="commit", type="submit", value=label)
 mixin teamScores(team)
   h3 #{team.name} (#{team.score})
   - each user in team.users
@@ -11,18 +15,12 @@ mixin teamScores(team)
           a(href='#')= user.tally()
         .hidden#edit_current_user_form
           .center
-            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
-              input(type="hidden", name="user[buffset_type]", value="pushup")
-              input.btn.primary#user_submit(name="commit", type="submit", value="20 Push-ups")
-            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
-              input(type="hidden", name="user[buffset_type]", value="situp")
-              input.btn.primary#user_submit(name="commit", type="submit", value="20 Sit-ups")
-            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
-              input(type="hidden", name="user[buffset_type]", value="pullup")
-              input.btn.primary#user_submit(name="commit", type="submit", value="5 Pull-ups")
-            form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
-              input(type="hidden", name="user[buffset_type]", value="wallsits")
-              input.btn.primary#user_submit(name="commit", type="submit", value="Wall sit")
+            mixin buffset(user, 'pushup', '20 Push-ups')
+            mixin buffset(user, 'situp', '20 Sit-ups')
+            mixin buffset(user, 'lunge', '20 Lunges')
+            mixin buffset(user, 'pullup', '5 Pull-ups')
+            mixin buffset(user, 'wallsits', '1m Wall sit')
+            mixin buffset(user, 'plank', '1m Plank')
           .clear
           input.btn#cancel_edit(type="submit", value="cancel")
       - else
