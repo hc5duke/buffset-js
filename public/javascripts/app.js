@@ -243,11 +243,13 @@ if (window.webkitNotifications) {
 
   var encouragements = [
     'You should be doing buffsets.',
-    'Get up and go grab a pushup bar.'
+    'Get up and go grab a pushup bar.',
+    'Go sit on that wall.',
   ];
   var discouragements = [
     'You are weak.',
-    'You are __name__\'s bitch.'
+    'You are __name__\'s bitch.',
+    'You might as well just give up.',
   ];
 
   $('#enable_notifications').click(function(){
