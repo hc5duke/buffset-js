@@ -1,7 +1,10 @@
-mixin buffset(user, type, label)
+mixin buffset(user, workout)
+  - type = workout[0]
+  - label = workout[1]
   form.new_buffset.edit_user(action="/users/#{user._id}/buffsets/create", method="post", id='edit_user' + user._id)
     input(type="hidden", name="user[buffset_type]", value=type)
     input.btn.primary#user_submit(name="commit", type="submit", value=label)
+
 mixin teamScores(team)
   h3 #{team.name} (#{team.score})
   - each user in team.users
@@ -15,12 +18,9 @@ mixin teamScores(team)
           a(href='#')= user.tally()
         .hidden#edit_current_user_form
           .center
-            mixin buffset(user, 'pushup', '20 Push-ups')
-            mixin buffset(user, 'situp', '20 Sit-ups')
-            mixin buffset(user, 'lunge', '20 Lunges')
-            mixin buffset(user, 'pullup', '5 Pull-ups')
-            mixin buffset(user, 'wallsits', '1m Wall sit')
-            mixin buffset(user, 'plank', '1m Plank')
+            - workouts = [['pushup', '20 Push-ups'], ['situp', '20 Sit-ups'], ['lunge', '20 Lunges'], ['pullup', '5 Pull-ups'], ['wallsits', '1m Wall sit'], ['plank', '1m Plank']]
+            - each workout in workouts
+              mixin buffset(user, workout)
           .clear
           input.btn#cancel_edit(type="submit", value="cancel")
       - else
