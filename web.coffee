@@ -27,7 +27,6 @@ pusherConfig[4] = '584c00ebe3703b0df7c1'
 pusherConfig = process.env.PUSHER_URL.split(/:|@|\//) if process.env.PUSHER_URL
 pusher = new Pusher appId: pusherConfig[7], key: pusherConfig[3], secret: pusherConfig[4]
 pushData  = (event, data) ->
-  data._source = verifyUrl.split(/\/+/)[1]
   pusher.trigger pusherChannel, event, data if pusher
 
 Server = mongo.Server

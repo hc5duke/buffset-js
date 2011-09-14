@@ -30,7 +30,6 @@
     secret: pusherConfig[4]
   });
   pushData = function(event, data) {
-    data._source = verifyUrl.split(/\/+/)[1];
     if (pusher) {
       return pusher.trigger(pusherChannel, event, data);
     }
