@@ -265,9 +265,13 @@ if (window.webkitNotifications) {
 var pusher = new Pusher('ee24436a8c23a9f95d03');
 var channel = pusher.subscribe('tapjoy_channel');
 channel.bind('buffset', function(data) {
-  var domain = location.href.split(/\/+/)[1];
-  var find = '#user_' + data.id + ' .count';
-  $(find).text(data.tally);
+  var userId = '#user_' + data.id + ' .count';
+  $(userId).text(data.tally);
+  var teamId = '#team_' + data.team + ' .count';
+  var teamScore = $(teamId).text();
+  if (typeof teamScore != 'undefined' && teamScore < data.teamScore) {
+    $(teamId).text(data.teamScore);
+  }
   if (Buffsets.currentUserId && Buffsets.currentUserId == data.id) {
     // myself
   } else {

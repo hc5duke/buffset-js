@@ -72,11 +72,17 @@ class User
     else
       "0"
 
-  pusherData: (offset) ->
-    id: @_id
-    name: @name
-    count: @buffsets.length + offset
-    tally: @tally(offset)
+  pusherData: (offset, callback) ->
+    data =
+      id: @_id
+      name: @name
+      count: @buffsets.length + offset
+      tally: @tally(offset)
+      team: @team
+      teamScore: 0
+    User.findAll {active: true, team: @team}, (allUsers) ->
+      _.each allUsers, (user) -> data.teamScore += user.buffsets.length
+      callback data
 
   update: (options, admin, callback) ->
     conditions = _id: @_id

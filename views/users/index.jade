@@ -6,11 +6,13 @@ mixin buffset(user, workout)
     input.btn.primary#user_submit(name="commit", type="submit", value=label)
 
 mixin teamScores(team)
-  h3 #{team.name} (#{team.score})
+  h3(id="team_#{team.order}")
+    = team.name
+    |  (<span class='count'>#{team.score}</span>)
   - each user in team.users
     - myUser = (currentUser && user._id == String(currentUser._id))
-    - user_id = myUser ? 'current_user' : "user_" + user._id
-    .user(id=user_id)
+    - userClass = myUser ? 'current_user' : ''
+    .user(id="user_" + user._id, class=userClass)
       .handle
         a(href='/users/' + user._id, title=user.name)= user.handle
       - if (myUser)

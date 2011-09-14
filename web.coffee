@@ -26,8 +26,6 @@ pusherConfig[3] = '9e3138091756a4f921d0'
 pusherConfig[4] = '584c00ebe3703b0df7c1'
 pusherConfig = process.env.PUSHER_URL.split(/:|@|\//) if process.env.PUSHER_URL
 pusher = new Pusher appId: pusherConfig[7], key: pusherConfig[3], secret: pusherConfig[4]
-pushData  = (event, data) ->
-  pusher.trigger pusherChannel, event, data if pusher
 
 Server = mongo.Server
 Db = mongo.Db
@@ -167,8 +165,8 @@ app.get '/users', (request, response, next) ->
         scores[user.team] += user.buffsets.length
         user.team
       teams = [
-        {name: teamNames[0], score: scores[0], users: members[0]}
-        {name: teamNames[1], score: scores[1], users: members[1]}
+        {name: teamNames[0], score: scores[0], users: members[0], order: 0}
+        {name: teamNames[1], score: scores[1], users: members[1], order: 1}
       ]
       locals = title: 'Users', teams: teams, currentUser: currentUser
       renderWithLocals locals, 'users/index', next, response
@@ -236,7 +234,8 @@ app.post '/users/:id/buffsets/create', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, request.params.id)
       Buffset.create request.params.id, request.body.user.buffset_type, () ->
-        pushData 'buffset', currentUser.pusherData(1)
+        currentUser.pusherData +1, (data) ->
+          pusher.trigger pusherChannel, 'buffset', data
         response.redirect '/users'
     else
       response.redirect 'back'

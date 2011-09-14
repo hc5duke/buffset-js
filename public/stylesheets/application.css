@@ -112,7 +112,7 @@ form.edit_user {
 .clear {
   clear: both;
 }
-#current_user .handle {
+.current_user .handle {
   color: #c00;
   border-bottom: 3px solid #c00;
 }

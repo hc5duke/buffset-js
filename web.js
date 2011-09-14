@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pushData, pusher, pusherChannel, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -29,11 +29,6 @@
     key: pusherConfig[3],
     secret: pusherConfig[4]
   });
-  pushData = function(event, data) {
-    if (pusher) {
-      return pusher.trigger(pusherChannel, event, data);
-    }
-  };
   Server = mongo.Server;
   Db = mongo.Db;
   RedisStore = redis(express);
@@ -228,11 +223,13 @@
           {
             name: teamNames[0],
             score: scores[0],
-            users: members[0]
+            users: members[0],
+            order: 0
           }, {
             name: teamNames[1],
             score: scores[1],
-            users: members[1]
+            users: members[1],
+            order: 1
           }
         ];
         locals = {
@@ -347,7 +344,9 @@
     return User.withCurrentUser(request.session, function(currentUser) {
       if (authorizedToEdit(currentUser, request.params.id)) {
         return Buffset.create(request.params.id, request.body.user.buffset_type, function() {
-          pushData('buffset', currentUser.pusherData(1));
+          currentUser.pusherData(+1, function(data) {
+            return pusher.trigger(pusherChannel, 'buffset', data);
+          });
           return response.redirect('/users');
         });
       } else {
