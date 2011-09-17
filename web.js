@@ -242,6 +242,15 @@
     });
   });
   app.get('/statz', function(request, response, next) {
+    var timeRange, timeRangeText;
+    timeRange = request.params.timeRange;
+    if (timeRange === 7) {
+      timeRangeText = '7 days';
+    } else if (timeRange === 24) {
+      timeRangeText = '24 hours';
+    } else {
+      timeRangeText = Math.ceil(((new Date()) - Date.parse('2011-09-12')) / 1000 / 3600 / 24) + 'days';
+    }
     return db.collection('buffsets', function(error, buffsets) {
       var conditions, init, reduce;
       conditions = {
@@ -270,7 +279,8 @@
           var locals;
           locals = {
             title: 'Statz',
-            currentUser: currentUser
+            currentUser: currentUser,
+            timeRange: timeRangeText
           };
           return renderWithLocals(locals, 'statz', next, response);
         });

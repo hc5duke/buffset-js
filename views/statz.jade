@@ -1,0 +1,17 @@
+!!! 5
+html
+  head
+    link(href="/stylesheets/bootstrap-1.0.0.min.css", media="screen", rel="stylesheet", type="text/css")
+    link(rel="icon", href="/images/favicon.png", type="image/x-icon")
+    link(href="/stylesheets/statz.css", media="screen", rel="stylesheet", type="text/css")
+    script(src="/javascripts/jquery.js", type="text/javascript")
+  body
+    include includes/toolbar
+    .container#body
+      h2 Stats for last #{timeRange}.
+      ul
+        li
+          a(href='time_range=24') 24 hours
+          a(href='time_range=7') 7 days
+          a(href='time_range=3') 30 days
+    include includes/footer

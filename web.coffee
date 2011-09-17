@@ -173,6 +173,14 @@ app.get '/users', (request, response, next) ->
 
 
 app.get '/statz', (request, response, next) ->
+  timeRange = request.params.timeRange
+  if timeRange == 7
+    timeRangeText = '7 days'
+  else if timeRange == 24
+    timeRangeText = '24 hours'
+  else
+    timeRangeText = Math.ceil(((new Date())-Date.parse('2011-09-12'))/1000/3600/24) + ' days'
+
   db.collection 'buffsets', (error, buffsets) ->
     conditions = created_at: $gt: 0
     init =
@@ -189,7 +197,10 @@ app.get '/statz', (request, response, next) ->
     buffsets.group {user_id: true}, conditions, init, reduce, (error, object) ->
       console.log object
       User.withCurrentUser request.session, (currentUser) ->
-        locals = title: 'Statz', currentUser: currentUser
+        locals =
+          title: 'Statz',
+          currentUser: currentUser
+          timeRange: timeRangeText
         renderWithLocals locals, 'statz', next, response
 
 app.get '/users/:id', (request, response, next) ->
