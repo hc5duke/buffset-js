@@ -152,13 +152,11 @@ User.findOne = (conditions, callback) ->
       else
         callback false
 
-User.findAll = (conditions, order, callback) ->
-  if typeof order == 'function'
-    callback = order
-    order = {}
-  order ||= {}
+User.findAll = (conditions, options, callback) ->
+  order = options.order || {}
+  limit = options.limit || 1000 # fix this when # of Tapjoy employees tops 1,000
   @db.collection 'users', (error, users) ->
-    users.find(conditions).sort(order).toArray (error, allUsers) ->
+    users.find(conditions).sort(order).limit(limit).toArray (error, allUsers) ->
       if error
         callback false
       else

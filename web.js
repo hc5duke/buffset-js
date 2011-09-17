@@ -201,7 +201,7 @@
   app.get('/users', function(request, response, next) {
     return User.findAll({
       active: true
-    }, function(allUsers) {
+    }, {}, function(allUsers) {
       allUsers = _.groupBy(allUsers, function(user) {
         return user.buffsets.length;
       });
@@ -238,6 +238,42 @@
           currentUser: currentUser
         };
         return renderWithLocals(locals, 'users/index', next, response);
+      });
+    });
+  });
+  app.get('/statz', function(request, response, next) {
+    return db.collection('buffsets', function(error, buffsets) {
+      var conditions, init, reduce;
+      conditions = {
+        created_at: {
+          $gt: 0
+        }
+      };
+      init = {
+        total: 0,
+        pushup: 0,
+        situp: 0,
+        lunge: 0,
+        pullup: 0,
+        wallsits: 0,
+        plank: 0
+      };
+      reduce = function(doc, out) {
+        out.total++;
+        return out[doc.type]++;
+      };
+      return buffsets.group({
+        user_id: true
+      }, conditions, init, reduce, function(error, object) {
+        console.log(object);
+        return User.withCurrentUser(request.session, function(currentUser) {
+          var locals;
+          locals = {
+            title: 'Statz',
+            currentUser: currentUser
+          };
+          return renderWithLocals(locals, 'statz', next, response);
+        });
       });
     });
   });
@@ -307,12 +343,16 @@
         };
         return User.findAll({
           active: true
-        }, userOrder, function(activeUsers) {
+        }, {
+          order: userOrder
+        }, function(activeUsers) {
           return User.findAll({
             active: {
               $ne: true
             }
-          }, userOrder, function(inactiveUsers) {
+          }, {
+            order: userOrder
+          }, function(inactiveUsers) {
             var locals;
             locals = {
               title: 'Users',

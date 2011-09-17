@@ -153,7 +153,7 @@ app.get '/verify', (request, response, next) ->
 
 
 app.get '/users', (request, response, next) ->
-  User.findAll active: true, (allUsers) ->
+  User.findAll {active: true}, {}, (allUsers) ->
     allUsers = _.groupBy allUsers, (user) -> user.buffsets.length
     allUsers = _.map allUsers, (users) ->
       users = _.sortBy users, (user) -> user.handle.toLowerCase()
@@ -171,6 +171,26 @@ app.get '/users', (request, response, next) ->
       locals = title: 'Users', teams: teams, currentUser: currentUser
       renderWithLocals locals, 'users/index', next, response
 
+
+app.get '/statz', (request, response, next) ->
+  db.collection 'buffsets', (error, buffsets) ->
+    conditions = created_at: $gt: 0
+    init =
+      total: 0
+      pushup: 0
+      situp: 0
+      lunge: 0
+      pullup: 0
+      wallsits: 0
+      plank: 0
+    reduce = (doc, out) ->
+      out.total++
+      out[doc.type]++
+    buffsets.group {user_id: true}, conditions, init, reduce, (error, object) ->
+      console.log object
+      User.withCurrentUser request.session, (currentUser) ->
+        locals = title: 'Statz', currentUser: currentUser
+        renderWithLocals locals, 'statz', next, response
 
 app.get '/users/:id', (request, response, next) ->
   response.redirect "/users/#{request.params.id}/buffsets"
@@ -208,8 +228,8 @@ app.get '/admin/users', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, '', true)
       userOrder = {team: 1, name: 1}
-      User.findAll active: true, userOrder, (activeUsers) ->
-        User.findAll active: {$ne: true}, userOrder, (inactiveUsers) ->
+      User.findAll {active: true}, {order: userOrder}, (activeUsers) ->
+        User.findAll {active: {$ne: true}}, {order: userOrder}, (inactiveUsers) ->
           locals =
             title: 'Users'
             activeUsers: activeUsers
