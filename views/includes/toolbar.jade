@@ -17,9 +17,10 @@
             a(href='/chartz/sum') Cumulative
           li
             a(href='/chartz/punch') Punch-card
-    ul.nav
-      li
-        a(href='/statz/') Statz
+    - if (currentUser)
+      ul.nav
+        li
+          a(href='/statz/') Statz
     ul.nav.secondary-nav
       li
         a(href='#', id='enable_notifications') Enable desktop notifications

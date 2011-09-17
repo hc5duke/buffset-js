@@ -8,10 +8,55 @@ html
   body
     include includes/toolbar
     .container#body
-      h2 Stats for last #{timeRange}.
-      ul
+      h1 Stats for last #{timeframe}
+      ul.timeframes
         li
           a(href='time_range=24') 24 hours
           a(href='time_range=7') 7 days
           a(href='time_range=3') 30 days
+      #money_totals
+        h3
+          table
+            tr
+              td Total buffsets: #{100}
+              td &nbsp;
+              td &nbsp;
+            tr
+              td Total push-up sets: #{12}
+              td Total sit-up sets: #{24}
+              td Total lunge sets: #{46}
+            tr
+              td Total pull-up sets: #{54}
+              td Total wall-sit sets: #{12}
+              td Total plank sets: #{11}
+
+        .last_updated Totals Last Updated: #{new Date()}
+        table.tablesorter
+          thead
+            tr
+              th Handle
+              th Team
+              th Gender
+              th Buffsets
+              th Push-ups
+              th Sit-ups
+              th Lunges
+              th Pull-ups
+              th Wall-sits
+              th Planks
+          tbody
+            - each stat in statz
+              - user = usersHash[String(stat.user_id)]
+              - if (user)
+                tr
+                  td= user['handle']
+                  td= user['team']
+                  td= user['gender']
+                  td= stat['total']
+                  td= stat['pushup']
+                  td= stat['situp']
+                  td= stat['lunge']
+                  td= stat['pullup']
+                  td= stat['wallsits']
+                  td= stat['plank']
     include includes/footer

@@ -173,35 +173,51 @@ app.get '/users', (request, response, next) ->
 
 
 app.get '/statz', (request, response, next) ->
-  timeRange = request.params.timeRange
-  if timeRange == 7
-    timeRangeText = '7 days'
-  else if timeRange == 24
-    timeRangeText = '24 hours'
-  else
-    timeRangeText = Math.ceil(((new Date())-Date.parse('2011-09-12'))/1000/3600/24) + ' days'
+  User.withCurrentUser request.session, (currentUser) ->
+    if !currentUser
+      return response.redirect '/users/'
+    timeframe = request.params.timeframe
+    if timeframe == 7
+      timeframeText = '7 days'
+    else if timeframe == 24
+      timeframeText = '24 hours'
+    else
+      timeframeText = Math.ceil(((new Date())-Date.parse('2011-09-12'))/1000/3600/24) + ' days'
 
-  db.collection 'buffsets', (error, buffsets) ->
-    conditions = created_at: $gt: 0
-    init =
-      total: 0
-      pushup: 0
-      situp: 0
-      lunge: 0
-      pullup: 0
-      wallsits: 0
-      plank: 0
-    reduce = (doc, out) ->
-      out.total++
-      out[doc.type]++
-    buffsets.group {user_id: true}, conditions, init, reduce, (error, object) ->
-      console.log object
-      User.withCurrentUser request.session, (currentUser) ->
-        locals =
-          title: 'Statz',
-          currentUser: currentUser
-          timeRange: timeRangeText
-        renderWithLocals locals, 'statz', next, response
+    db.collection 'buffsets', (error, buffsets) ->
+      conditions = {}#created_at: $gt: 0
+      init =
+        total: 0
+        pushup: 0
+        situp: 0
+        lunge: 0
+        pullup: 0
+        wallsits: 0
+        plank: 0
+        global: {count: 0}
+      reduce = (doc, out) ->
+        out.total++
+        out[doc.type]++
+      buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
+        User.findAll {active: true}, {}, (allUsers) ->
+          usersHash = {}
+          _.each allUsers, (user) ->
+            u =
+              handle: user.handle
+              team: user.team
+              gender: if user.female then 'female' else 'male'
+            usersHash[user._id] = u
+          console.log statz
+          console.log usersHash
+          User.withCurrentUser request.session, (currentUser) ->
+            locals =
+              title: 'Statz',
+              usersHash: usersHash
+              currentUser: currentUser
+              timeframe: timeframeText
+              statz: statz
+            renderWithLocals locals, 'statz', next, response
+
 
 app.get '/users/:id', (request, response, next) ->
   response.redirect "/users/#{request.params.id}/buffsets"

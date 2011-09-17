@@ -242,47 +242,69 @@
     });
   });
   app.get('/statz', function(request, response, next) {
-    var timeRange, timeRangeText;
-    timeRange = request.params.timeRange;
-    if (timeRange === 7) {
-      timeRangeText = '7 days';
-    } else if (timeRange === 24) {
-      timeRangeText = '24 hours';
-    } else {
-      timeRangeText = Math.ceil(((new Date()) - Date.parse('2011-09-12')) / 1000 / 3600 / 24) + 'days';
-    }
-    return db.collection('buffsets', function(error, buffsets) {
-      var conditions, init, reduce;
-      conditions = {
-        created_at: {
-          $gt: 0
-        }
-      };
-      init = {
-        total: 0,
-        pushup: 0,
-        situp: 0,
-        lunge: 0,
-        pullup: 0,
-        wallsits: 0,
-        plank: 0
-      };
-      reduce = function(doc, out) {
-        out.total++;
-        return out[doc.type]++;
-      };
-      return buffsets.group({
-        user_id: true
-      }, conditions, init, reduce, function(error, object) {
-        console.log(object);
-        return User.withCurrentUser(request.session, function(currentUser) {
-          var locals;
-          locals = {
-            title: 'Statz',
-            currentUser: currentUser,
-            timeRange: timeRangeText
-          };
-          return renderWithLocals(locals, 'statz', next, response);
+    return User.withCurrentUser(request.session, function(currentUser) {
+      var timeframe, timeframeText;
+      if (!currentUser) {
+        return response.redirect('/users/');
+      }
+      timeframe = request.params.timeframe;
+      if (timeframe === 7) {
+        timeframeText = '7 days';
+      } else if (timeframe === 24) {
+        timeframeText = '24 hours';
+      } else {
+        timeframeText = Math.ceil(((new Date()) - Date.parse('2011-09-12')) / 1000 / 3600 / 24) + ' days';
+      }
+      return db.collection('buffsets', function(error, buffsets) {
+        var conditions, init, reduce;
+        conditions = {};
+        init = {
+          total: 0,
+          pushup: 0,
+          situp: 0,
+          lunge: 0,
+          pullup: 0,
+          wallsits: 0,
+          plank: 0,
+          global: {
+            count: 0
+          }
+        };
+        reduce = function(doc, out) {
+          out.total++;
+          return out[doc.type]++;
+        };
+        return buffsets.group({
+          user_id: true
+        }, conditions, init, reduce, function(error, statz) {
+          return User.findAll({
+            active: true
+          }, {}, function(allUsers) {
+            var usersHash;
+            usersHash = {};
+            _.each(allUsers, function(user) {
+              var u;
+              u = {
+                handle: user.handle,
+                team: user.team,
+                gender: user.female ? 'female' : 'male'
+              };
+              return usersHash[user._id] = u;
+            });
+            console.log(statz);
+            console.log(usersHash);
+            return User.withCurrentUser(request.session, function(currentUser) {
+              var locals;
+              locals = {
+                title: 'Statz',
+                usersHash: usersHash,
+                currentUser: currentUser,
+                timeframe: timeframeText,
+                statz: statz
+              };
+              return renderWithLocals(locals, 'statz', next, response);
+            });
+          });
         });
       });
     });
