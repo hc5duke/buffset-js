@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, conRedis, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -9,8 +9,9 @@
   mongo = require('mongodb');
   Server = mongo.Server;
   Db = mongo.Db;
-  redis = require('connect-redis');
-  RedisStore = redis(express);
+  redis = require('redis');
+  conRedis = require('connect-redis');
+  RedisStore = conRedis(express);
   _ = require('underscore');
   Pusher = require('node-pusher');
   Helpers = require('./lib/helpers');
@@ -66,8 +67,9 @@
     }));
     return verifyUrl = 'http://localhost:' + port + '/verify';
   });
+  redisConfig = false;
   app.configure('production', function() {
-    var oneYear, redisConfig, x, _ref;
+    var oneYear, x, _ref;
     oneYear = 31557600000;
     app.use(express.static(__dirname + '/public', {
       maxAge: oneYear
@@ -85,6 +87,16 @@
       })
     }));
   });
+  if (redisConfig) {
+    redisClient = redis.createClient(redisConfig[6], redisConfig[5]);
+    redisClient.auth(redisConfig[4], function(error, result) {
+      if (error) {
+        return console.log(error);
+      }
+    });
+  } else {
+    redisClient = redis.createClient();
+  }
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
   });
@@ -243,7 +255,7 @@
   });
   app.get('/statz', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
-      var timeframe, timeframeText;
+      var callback, key, timeframe, timeframeText;
       if (!currentUser) {
         return response.redirect('/users/');
       }
@@ -256,75 +268,90 @@
         timeframe = '3';
         timeframeText = 'season 3';
       }
-      return db.collection('buffsets', function(error, buffsets) {
-        var conditions, init, reduce;
-        conditions = {};
-        if (timeframe === '7') {
-          conditions.created_at = {
-            $gt: new Date(new Date() - 7 * 24 * 3600 * 1000)
-          };
-        }
-        if (timeframe === '24') {
-          conditions.created_at = {
-            $gt: new Date(new Date() - 24 * 3600 * 1000)
-          };
-        }
-        init = {
-          total: 0,
-          pushup: 0,
-          situp: 0,
-          lunge: 0,
-          pullup: 0,
-          wallsits: 0,
-          plank: 0,
-          global: {
-            total: 0,
-            pushup: 0,
-            situp: 0,
-            lunge: 0,
-            pullup: 0,
-            wallsits: 0,
-            plank: 0
-          }
-        };
-        reduce = function(doc, out) {
-          out.total++;
-          out[doc.type]++;
-          out.global.total++;
-          return out.global[doc.type]++;
-        };
-        return buffsets.group({
-          user_id: true
-        }, conditions, init, reduce, function(error, statz) {
-          return User.findAll({
-            active: true
-          }, {}, function(allUsers) {
-            var usersHash;
-            usersHash = {};
-            _.each(allUsers, function(user) {
-              var u;
-              u = {
-                handle: user.handle,
-                name: user.name,
-                team: teamNames[user.team],
-                gender: user.female ? 'female' : 'male'
+      callback = function(locals) {
+        console.log(locals);
+        locals.title = 'Statz';
+        locals.currentUser = currentUser;
+        return renderWithLocals(locals, 'statz', next, response);
+      };
+      key = "statz[" + timeframe + "]";
+      return redisClient.get(key, function(err, locals) {
+        if (locals) {
+          console.log('hit!');
+          return callback(JSON.parse(locals));
+        } else {
+          console.log('miss!');
+          return db.collection('buffsets', function(error, buffsets) {
+            var conditions, init, reduce;
+            conditions = {};
+            if (timeframe === '7') {
+              conditions.created_at = {
+                $gt: new Date(new Date() - 7 * 24 * 3600 * 1000)
               };
-              return usersHash[user._id] = u;
-            });
-            return User.withCurrentUser(request.session, function(currentUser) {
-              var locals;
-              locals = {
-                title: 'Statz',
-                usersHash: usersHash,
-                currentUser: currentUser,
-                timeframe: timeframe,
-                timeframeText: timeframeText,
-                statz: statz
+            }
+            if (timeframe === '24') {
+              conditions.created_at = {
+                $gt: new Date(new Date() - 24 * 3600 * 1000)
               };
-              return renderWithLocals(locals, 'statz', next, response);
+            }
+            init = {
+              total: 0,
+              pushup: 0,
+              situp: 0,
+              lunge: 0,
+              pullup: 0,
+              wallsits: 0,
+              plank: 0,
+              global: {
+                total: 0,
+                pushup: 0,
+                situp: 0,
+                lunge: 0,
+                pullup: 0,
+                wallsits: 0,
+                plank: 0
+              }
+            };
+            reduce = function(doc, out) {
+              out.total++;
+              out[doc.type]++;
+              out.global.total++;
+              return out.global[doc.type]++;
+            };
+            return buffsets.group({
+              user_id: true
+            }, conditions, init, reduce, function(error, statz) {
+              return User.findAll({
+                active: true
+              }, {}, function(allUsers) {
+                var usersHash;
+                usersHash = {};
+                _.each(allUsers, function(user) {
+                  var u;
+                  u = {
+                    handle: user.handle,
+                    name: user.name,
+                    team: teamNames[user.team],
+                    gender: user.female ? 'female' : 'male'
+                  };
+                  return usersHash[user._id] = u;
+                });
+                return User.withCurrentUser(request.session, function(currentUser) {
+                  locals = {
+                    usersHash: usersHash,
+                    timeframe: timeframe,
+                    timeframeText: timeframeText,
+                    statz: statz,
+                    updatedAt: new Date()
+                  };
+                  callback(locals);
+                  redisClient.set(key, JSON.stringify(locals));
+                  return redisClient.expire(key, 10);
+                });
+              });
             });
           });
-        });
+        }
       });
     });
   });

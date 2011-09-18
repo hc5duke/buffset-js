@@ -7,8 +7,9 @@ jade        = require 'jade'
 mongo       = require 'mongodb'
 Server      = mongo.Server
 Db          = mongo.Db
-redis       = require 'connect-redis'
-RedisStore  = redis express
+redis       = require 'redis'
+conRedis    = require 'connect-redis'
+RedisStore  = conRedis express
 _           = require 'underscore'
 Pusher      = require 'node-pusher'
 Helpers     = require './lib/helpers'
@@ -62,7 +63,7 @@ app.configure 'development', ->
     store: new RedisStore
       maxAge: oneYear
   verifyUrl = 'http://localhost:'+port+'/verify'
-
+redisConfig = false
 app.configure 'production', ->
   oneYear = 31557600000
   app.use express.static __dirname + '/public', maxAge: oneYear
@@ -76,6 +77,12 @@ app.configure 'production', ->
       pass: redisConfig[4]
       host: redisConfig[5]
       port: redisConfig[6]
+if redisConfig
+  redisClient = redis.createClient(redisConfig[6], redisConfig[5])
+  redisClient.auth redisConfig[4], (error, result) ->
+    console.log error if error
+else
+  redisClient = redis.createClient()
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
@@ -188,53 +195,53 @@ app.get '/statz', (request, response, next) ->
     else
       timeframe = '3'
       timeframeText = 'season 3'
-
-    db.collection 'buffsets', (error, buffsets) ->
-      conditions = {}
-      if timeframe == '7'
-        conditions.created_at = $gt: new Date(new Date() - 7 * 24 * 3600 * 1000)
-      if timeframe == '24'
-        conditions.created_at = $gt: new Date(new Date() - 24 * 3600 * 1000)
-      init =
-        total: 0
-        pushup: 0
-        situp: 0
-        lunge: 0
-        pullup: 0
-        wallsits: 0
-        plank: 0
-        global:
-          total: 0
-          pushup: 0
-          situp: 0
-          lunge: 0
-          pullup: 0
-          wallsits: 0
-          plank: 0
-      reduce = (doc, out) ->
-        out.total++
-        out[doc.type]++
-        out.global.total++
-        out.global[doc.type]++
-      buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
-        User.findAll {active: true}, {}, (allUsers) ->
-          usersHash = {}
-          _.each allUsers, (user) ->
-            u =
-              handle: user.handle
-              name: user.name
-              team: teamNames[user.team]
-              gender: if user.female then 'female' else 'male'
-            usersHash[user._id] = u
-          User.withCurrentUser request.session, (currentUser) ->
-            locals =
-              title: 'Statz',
-              usersHash: usersHash
-              currentUser: currentUser
-              timeframe: timeframe
-              timeframeText: timeframeText
-              statz: statz
-            renderWithLocals locals, 'statz', next, response
+    callback = (locals) ->
+      console.log(locals)
+      locals.title = 'Statz'
+      locals.currentUser = currentUser
+      renderWithLocals locals, 'statz', next, response
+    key = "statz[" + timeframe + "]"
+    redisClient.get key, (err, locals) ->
+      if locals
+        console.log 'hit!'
+        callback JSON.parse(locals)
+      else
+        console.log 'miss!'
+        db.collection 'buffsets', (error, buffsets) ->
+          conditions = {}
+          if timeframe == '7'
+            conditions.created_at = $gt: new Date(new Date() - 7 * 24 * 3600 * 1000)
+          if timeframe == '24'
+            conditions.created_at = $gt: new Date(new Date() - 24 * 3600 * 1000)
+          init =
+            total: 0, pushup: 0, situp: 0, lunge: 0, pullup: 0, wallsits: 0, plank: 0,
+            global:
+              total: 0, pushup: 0, situp: 0, lunge: 0, pullup: 0, wallsits: 0, plank: 0
+          reduce = (doc, out) ->
+            out.total++
+            out[doc.type]++
+            out.global.total++
+            out.global[doc.type]++
+          buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
+            User.findAll {active: true}, {}, (allUsers) ->
+              usersHash = {}
+              _.each allUsers, (user) ->
+                u =
+                  handle: user.handle
+                  name: user.name
+                  team: teamNames[user.team]
+                  gender: if user.female then 'female' else 'male'
+                usersHash[user._id] = u
+              User.withCurrentUser request.session, (currentUser) ->
+                locals =
+                  usersHash: usersHash
+                  timeframe: timeframe
+                  timeframeText: timeframeText
+                  statz: statz
+                  updatedAt: new Date()
+                callback locals
+                redisClient.set key, JSON.stringify(locals)
+                redisClient.expire key, 60
 
 
 app.get '/users/:id', (request, response, next) ->

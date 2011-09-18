@@ -70,7 +70,7 @@ html
           td
             h3 Total plank sets: #{statz[0] ? statz[0].global.plank : 0}
 
-      .last_updated Last Updated: #{new Date()}
+      .last_updated Last Updated: #{new Date(Date.parse(updatedAt))}
       table.tablesorter#statz
         thead
           tr
