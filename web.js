@@ -269,7 +269,6 @@
         timeframeText = 'season 3';
       }
       callback = function(locals) {
-        console.log(locals);
         locals.title = 'Statz';
         locals.currentUser = currentUser;
         return renderWithLocals(locals, 'statz', next, response);
@@ -277,10 +276,8 @@
       key = "statz[" + timeframe + "]";
       return redisClient.get(key, function(err, locals) {
         if (locals) {
-          console.log('hit!');
           return callback(JSON.parse(locals));
         } else {
-          console.log('miss!');
           return db.collection('buffsets', function(error, buffsets) {
             var conditions, init, reduce;
             conditions = {};
@@ -346,7 +343,7 @@
                   };
                   callback(locals);
                   redisClient.set(key, JSON.stringify(locals));
-                  return redisClient.expire(key, 10);
+                  return redisClient.expire(key, 60);
                 });
               });
             });

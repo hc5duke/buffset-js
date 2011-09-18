@@ -196,17 +196,14 @@ app.get '/statz', (request, response, next) ->
       timeframe = '3'
       timeframeText = 'season 3'
     callback = (locals) ->
-      console.log(locals)
       locals.title = 'Statz'
       locals.currentUser = currentUser
       renderWithLocals locals, 'statz', next, response
     key = "statz[" + timeframe + "]"
     redisClient.get key, (err, locals) ->
       if locals
-        console.log 'hit!'
         callback JSON.parse(locals)
       else
-        console.log 'miss!'
         db.collection 'buffsets', (error, buffsets) ->
           conditions = {}
           if timeframe == '7'
