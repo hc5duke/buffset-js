@@ -1,0 +1,37 @@
+#body {
+  margin: 10px auto;
+  padding: 10px 15px;
+}
+
+ul.timeframes {
+  margin: -10px 0 10px;
+  padding: 0px;
+}
+ul.timeframes li {
+  display: inline;
+}
+ul.timeframes li:after {
+  content: " | ";
+}
+ul.timeframes li:last-child:after {
+  content: "";
+}
+ul.timeframes li a {
+  text-decoration: underline;
+}
+
+#buffset_totals td {
+  border: none;
+  padding: 0;
+}
+#buffset_totals td h3 {
+  padding: 0;
+}
+
+table.tablesorter {
+  border-spacing: 2px;
+  color: black;
+}
+table.tablesorter thead tr .header {
+  background-position: right bottom;
+}

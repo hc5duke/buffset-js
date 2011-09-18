@@ -247,13 +247,14 @@
       if (!currentUser) {
         return response.redirect('/users/');
       }
-      timeframe = request.params.timeframe;
-      if (timeframe === 7) {
-        timeframeText = '7 days';
-      } else if (timeframe === 24) {
-        timeframeText = '24 hours';
+      timeframe = request.query.timeframe;
+      if (timeframe === '7') {
+        timeframeText = 'last 7 days';
+      } else if (timeframe === '24') {
+        timeframeText = 'last 24 hours';
       } else {
-        timeframeText = Math.ceil(((new Date()) - Date.parse('2011-09-12')) / 1000 / 3600 / 24) + ' days';
+        timeframe = '3';
+        timeframeText = 'season 3';
       }
       return db.collection('buffsets', function(error, buffsets) {
         var conditions, init, reduce;
@@ -291,15 +292,14 @@
               };
               return usersHash[user._id] = u;
             });
-            console.log(statz);
-            console.log(usersHash);
             return User.withCurrentUser(request.session, function(currentUser) {
               var locals;
               locals = {
                 title: 'Statz',
                 usersHash: usersHash,
                 currentUser: currentUser,
-                timeframe: timeframeText,
+                timeframe: timeframe,
+                timeframeText: timeframeText,
                 statz: statz
               };
               return renderWithLocals(locals, 'statz', next, response);

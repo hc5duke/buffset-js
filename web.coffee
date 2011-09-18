@@ -176,13 +176,14 @@ app.get '/statz', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     if !currentUser
       return response.redirect '/users/'
-    timeframe = request.params.timeframe
-    if timeframe == 7
-      timeframeText = '7 days'
-    else if timeframe == 24
-      timeframeText = '24 hours'
+    timeframe = request.query.timeframe
+    if timeframe == '7'
+      timeframeText = 'last 7 days'
+    else if timeframe == '24'
+      timeframeText = 'last 24 hours'
     else
-      timeframeText = Math.ceil(((new Date())-Date.parse('2011-09-12'))/1000/3600/24) + ' days'
+      timeframe = '3'
+      timeframeText = 'season 3'
 
     db.collection 'buffsets', (error, buffsets) ->
       conditions = {}#created_at: $gt: 0
@@ -207,14 +208,13 @@ app.get '/statz', (request, response, next) ->
               team: user.team
               gender: if user.female then 'female' else 'male'
             usersHash[user._id] = u
-          console.log statz
-          console.log usersHash
           User.withCurrentUser request.session, (currentUser) ->
             locals =
               title: 'Statz',
               usersHash: usersHash
               currentUser: currentUser
-              timeframe: timeframeText
+              timeframe: timeframe
+              timeframeText: timeframeText
               statz: statz
             renderWithLocals locals, 'statz', next, response
 

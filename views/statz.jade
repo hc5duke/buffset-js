@@ -1,62 +1,84 @@
+mixin timeframeLink(length, text)
+  - if (timeframe == length)
+    = text
+  - else
+    a(href='/statz?timeframe=#{length}')= text
+
 !!! 5
 html
   head
     link(href="/stylesheets/bootstrap-1.0.0.min.css", media="screen", rel="stylesheet", type="text/css")
     link(rel="icon", href="/images/favicon.png", type="image/x-icon")
+    link(href="/stylesheets/themes/blue/style.css", media="screen", rel="stylesheet", type="text/css")
     link(href="/stylesheets/statz.css", media="screen", rel="stylesheet", type="text/css")
     script(src="/javascripts/jquery.js", type="text/javascript")
+    script(src="/javascripts/jquery.tablesorter.min.js", type="text/javascript")
   body
     include includes/toolbar
-    .container#body
-      h1 Stats for last #{timeframe}
+    #body
+      h1 Stats for #{timeframeText}
       ul.timeframes
         li
-          a(href='time_range=24') 24 hours
-          a(href='time_range=7') 7 days
-          a(href='time_range=3') 30 days
-      #money_totals
-        h3
-          table
-            tr
-              td Total buffsets: #{100}
-              td &nbsp;
-              td &nbsp;
-            tr
-              td Total push-up sets: #{12}
-              td Total sit-up sets: #{24}
-              td Total lunge sets: #{46}
-            tr
-              td Total pull-up sets: #{54}
-              td Total wall-sit sets: #{12}
-              td Total plank sets: #{11}
+          mixin timeframeLink(24, '24 hours')
+        li
+          mixin timeframeLink(7, '7 days')
+        li
+          mixin timeframeLink(3, 'Season 3')
+      table#buffset_totals
+        tr
+          td
+            h3 Total buffsets: #{100}
+          td
+            h3 &nbsp;
+          td
+            h3 &nbsp;
+        tr
+          td
+            h3 Total push-up sets: #{12}
+          td
+            h3 Total sit-up sets: #{24}
+          td
+            h3 Total lunge sets: #{46}
+        tr
+          td
+            h3 Total pull-up sets: #{54}
+          td
+            h3 Total wall-sit sets: #{12}
+          td
+            h3 Total plank sets: #{11}
 
-        .last_updated Totals Last Updated: #{new Date()}
-        table.tablesorter
-          thead
-            tr
-              th Handle
-              th Team
-              th Gender
-              th Buffsets
-              th Push-ups
-              th Sit-ups
-              th Lunges
-              th Pull-ups
-              th Wall-sits
-              th Planks
-          tbody
-            - each stat in statz
-              - user = usersHash[String(stat.user_id)]
-              - if (user)
-                tr
-                  td= user['handle']
-                  td= user['team']
-                  td= user['gender']
-                  td= stat['total']
-                  td= stat['pushup']
-                  td= stat['situp']
-                  td= stat['lunge']
-                  td= stat['pullup']
-                  td= stat['wallsits']
-                  td= stat['plank']
+      .last_updated Last Updated: #{new Date()}
+      table.tablesorter#statz
+        thead
+          tr
+            th Handle
+            th Team
+            th Gender
+            th Buffsets
+            th Push-ups
+            th Sit-ups
+            th Lunges
+            th Pull-ups
+            th Wall-sits
+            th Planks
+        tbody
+          - each stat in statz
+            - user = usersHash[String(stat.user_id)]
+            - if (user)
+              tr
+                td= user['handle']
+                td= user['team']
+                td= user['gender']
+                td= stat['total']
+                td= stat['pushup']
+                td= stat['situp']
+                td= stat['lunge']
+                td= stat['pullup']
+                td= stat['wallsits']
+                td= stat['plank']
     include includes/footer
+    script(type="text/javascript")
+      $("#statz").tablesorter({
+        widgets: ['zebra'],
+        sortList: [[3,1]]
+      });
