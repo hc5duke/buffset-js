@@ -5,7 +5,10 @@ url         = require 'url'
 querystring = require 'querystring'
 jade        = require 'jade'
 mongo       = require 'mongodb'
+Server      = mongo.Server
+Db          = mongo.Db
 redis       = require 'connect-redis'
+RedisStore  = redis express
 _           = require 'underscore'
 Pusher      = require 'node-pusher'
 Helpers     = require './lib/helpers'
@@ -13,12 +16,17 @@ User        = require './lib/user'
 Buffset     = require './lib/buffset'
 
 port        = process.env.PORT || 4000
-verifyUrl   = 'https://buffsets.tapjoy.com/verify'
-teamNames   = [
-  process.env.TEAM_1_NAME || 'Amir'
-  process.env.TEAM_2_NAME || 'Johnny'
-]
+app         = express.createServer express.logger()
 
+# OpenID
+verifyUrl   = 'https://buffsets.tapjoy.com/verify'
+extension = new openid.AttributeExchange
+  "http://axschema.org/contact/email": "required"
+  "http://axschema.org/namePerson/first": "required"
+  "http://axschema.org/namePerson/last": "required"
+relyingParty = new openid.RelyingParty verifyUrl, null, false, false, [extension]
+
+# Pusher
 pusherChannel   = 'tapjoy_channel'
 pusherConfig = []
 pusherConfig[7] = '7999' # dev account
@@ -27,15 +35,17 @@ pusherConfig[4] = '584c00ebe3703b0df7c1'
 pusherConfig = process.env.PUSHER_URL.split(/:|@|\//) if process.env.PUSHER_URL
 pusher = new Pusher appId: pusherConfig[7], key: pusherConfig[3], secret: pusherConfig[4]
 
-Server = mongo.Server
-Db = mongo.Db
-RedisStore = redis express
-app = express.createServer express.logger()
+# Mongo
 dbHost = 'localhost'
 dbPort = 27017
 dbUser = ''
 dbPass = ''
 dbName = 'buffsets'
+
+teamNames   = [
+  process.env.TEAM_1_NAME || 'Amir'
+  process.env.TEAM_2_NAME || 'Johnny'
+]
 
 app.configure ->
   app.set 'views', __dirname + '/views'
@@ -66,12 +76,6 @@ app.configure 'production', ->
       pass: redisConfig[4]
       host: redisConfig[5]
       port: redisConfig[6]
-
-extension = new openid.AttributeExchange
-  "http://axschema.org/contact/email": "required"
-  "http://axschema.org/namePerson/first": "required"
-  "http://axschema.org/namePerson/last": "required"
-relyingParty = new openid.RelyingParty verifyUrl, null, false, false, [extension]
 
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server

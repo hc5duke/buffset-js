@@ -7,15 +7,24 @@
   querystring = require('querystring');
   jade = require('jade');
   mongo = require('mongodb');
+  Server = mongo.Server;
+  Db = mongo.Db;
   redis = require('connect-redis');
+  RedisStore = redis(express);
   _ = require('underscore');
   Pusher = require('node-pusher');
   Helpers = require('./lib/helpers');
   User = require('./lib/user');
   Buffset = require('./lib/buffset');
   port = process.env.PORT || 4000;
+  app = express.createServer(express.logger());
   verifyUrl = 'https://buffsets.tapjoy.com/verify';
-  teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
+  extension = new openid.AttributeExchange({
+    "http://axschema.org/contact/email": "required",
+    "http://axschema.org/namePerson/first": "required",
+    "http://axschema.org/namePerson/last": "required"
+  });
+  relyingParty = new openid.RelyingParty(verifyUrl, null, false, false, [extension]);
   pusherChannel = 'tapjoy_channel';
   pusherConfig = [];
   pusherConfig[7] = '7999';
@@ -29,15 +38,12 @@
     key: pusherConfig[3],
     secret: pusherConfig[4]
   });
-  Server = mongo.Server;
-  Db = mongo.Db;
-  RedisStore = redis(express);
-  app = express.createServer(express.logger());
   dbHost = 'localhost';
   dbPort = 27017;
   dbUser = '';
   dbPass = '';
   dbName = 'buffsets';
+  teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
   app.configure(function() {
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
@@ -79,12 +85,6 @@
       })
     }));
   });
-  extension = new openid.AttributeExchange({
-    "http://axschema.org/contact/email": "required",
-    "http://axschema.org/namePerson/first": "required",
-    "http://axschema.org/namePerson/last": "required"
-  });
-  relyingParty = new openid.RelyingParty(verifyUrl, null, false, false, [extension]);
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
   });
