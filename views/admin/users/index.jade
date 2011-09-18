@@ -4,6 +4,9 @@ mixin userForm(user)
     input(type="checkbox", name="user[active]", value="1", checked=user.active)
     input(type="text", size="30", name="user[name]", value=user.name)
     input(type="text", size="30", name="user[handle]", value=user.handle, maxlength=8)
+    select(name="user[female]")
+      option(value=0, selected=(user.female)) male
+      option(value=1, selected=(user.female)) female
     select(name="user[team]")
       option(value=0, selected=(user.team == 0))= teamNames[0]
       option(value=1, selected=(user.team == 1))= teamNames[1]
