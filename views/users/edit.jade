@@ -32,6 +32,13 @@ html
                       option(value=1, selected=(user.team == 1))= teamNames[1]
                 tr
                   td
+                    label(value='user_female') Gender
+                  td
+                    select#user_female(name="user[female]")
+                      option(value=0, selected=(!user.female)) Male
+                      option(value=1, selected=(user.female)) Female
+                tr
+                  td
                     label(value='user_abuse') Allow abusive language?
                   td
                     select#user_abuse(name="user[abuse]")
