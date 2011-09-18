@@ -186,7 +186,11 @@ app.get '/statz', (request, response, next) ->
       timeframeText = 'season 3'
 
     db.collection 'buffsets', (error, buffsets) ->
-      conditions = {}#created_at: $gt: 0
+      conditions = {}
+      if timeframe == '7'
+        conditions.created_at = $gt: new Date(new Date() - 7 * 24 * 3600 * 1000)
+      if timeframe == '24'
+        conditions.created_at = $gt: new Date(new Date() - 24 * 3600 * 1000)
       init =
         total: 0
         pushup: 0
@@ -195,10 +199,19 @@ app.get '/statz', (request, response, next) ->
         pullup: 0
         wallsits: 0
         plank: 0
-        global: {count: 0}
+        global:
+          total: 0
+          pushup: 0
+          situp: 0
+          lunge: 0
+          pullup: 0
+          wallsits: 0
+          plank: 0
       reduce = (doc, out) ->
         out.total++
         out[doc.type]++
+        out.global.total++
+        out.global[doc.type]++
       buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
         User.findAll {active: true}, {}, (allUsers) ->
           usersHash = {}
@@ -206,7 +219,7 @@ app.get '/statz', (request, response, next) ->
             u =
               handle: user.handle
               name: user.name
-              team: user.team
+              team: teamNames[user.team]
               gender: if user.female then 'female' else 'male'
             usersHash[user._id] = u
           User.withCurrentUser request.session, (currentUser) ->

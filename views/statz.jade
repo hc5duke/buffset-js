@@ -4,6 +4,29 @@ mixin timeframeLink(length, text)
   - else
     a(href='/statz?timeframe=#{length}')= text
 
+mixin user(user, stat)
+  tr
+    td= user['name']
+    td= user['handle']
+    td= user['team']
+    td= user['gender']
+    - if (stat)
+      td= stat['total']
+      td= stat['pushup']
+      td= stat['situp']
+      td= stat['lunge']
+      td= stat['pullup']
+      td= stat['wallsits']
+      td= stat['plank']
+    - else
+      td 0
+      td 0
+      td 0
+      td 0
+      td 0
+      td 0
+      td 0
+
 !!! 5
 html
   head
@@ -27,25 +50,25 @@ html
       table#buffset_totals
         tr
           td
-            h3 Total buffsets: #{100}
+            h3 Total buffsets: #{statz[0] ? statz[0].global.total : 0}
           td
             h3 &nbsp;
           td
             h3 &nbsp;
         tr
           td
-            h3 Total push-up sets: #{12}
+            h3 Total push-up sets: #{statz[0] ? statz[0].global.pushup : 0}
           td
-            h3 Total sit-up sets: #{24}
+            h3 Total sit-up sets: #{statz[0] ? statz[0].global.situp : 0}
           td
-            h3 Total lunge sets: #{46}
+            h3 Total lunge sets: #{statz[0] ? statz[0].global.lunge : 0}
         tr
           td
-            h3 Total pull-up sets: #{54}
+            h3 Total pull-up sets: #{statz[0] ? statz[0].global.pullup : 0}
           td
-            h3 Total wall-sit sets: #{12}
+            h3 Total wall-sit sets: #{statz[0] ? statz[0].global.wallsits : 0}
           td
-            h3 Total plank sets: #{11}
+            h3 Total plank sets: #{statz[0] ? statz[0].global.plank : 0}
 
       .last_updated Last Updated: #{new Date()}
       table.tablesorter#statz
@@ -64,20 +87,13 @@ html
             th Planks
         tbody
           - each stat in statz
-            - user = usersHash[String(stat.user_id)]
+            - user_id = String(stat.user_id)
+            - user = usersHash[user_id]
             - if (user)
-              tr
-                td= user['name']
-                td= user['handle']
-                td= user['team']
-                td= user['gender']
-                td= stat['total']
-                td= stat['pushup']
-                td= stat['situp']
-                td= stat['lunge']
-                td= stat['pullup']
-                td= stat['wallsits']
-                td= stat['plank']
+              - delete usersHash[user_id]
+              mixin user(user, stat)
+          - each user in usersHash
+            mixin user(user, false)
     include includes/footer
     script(type="text/javascript")
       $("#statz").tablesorter({

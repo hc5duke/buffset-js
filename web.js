@@ -259,6 +259,16 @@
       return db.collection('buffsets', function(error, buffsets) {
         var conditions, init, reduce;
         conditions = {};
+        if (timeframe === '7') {
+          conditions.created_at = {
+            $gt: new Date(new Date() - 7 * 24 * 3600 * 1000)
+          };
+        }
+        if (timeframe === '24') {
+          conditions.created_at = {
+            $gt: new Date(new Date() - 24 * 3600 * 1000)
+          };
+        }
         init = {
           total: 0,
           pushup: 0,
@@ -268,12 +278,20 @@
           wallsits: 0,
           plank: 0,
           global: {
-            count: 0
+            total: 0,
+            pushup: 0,
+            situp: 0,
+            lunge: 0,
+            pullup: 0,
+            wallsits: 0,
+            plank: 0
           }
         };
         reduce = function(doc, out) {
           out.total++;
-          return out[doc.type]++;
+          out[doc.type]++;
+          out.global.total++;
+          return out.global[doc.type]++;
         };
         return buffsets.group({
           user_id: true
@@ -288,7 +306,7 @@
               u = {
                 handle: user.handle,
                 name: user.name,
-                team: user.team,
+                team: teamNames[user.team],
                 gender: user.female ? 'female' : 'male'
               };
               return usersHash[user._id] = u;
