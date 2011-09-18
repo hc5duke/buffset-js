@@ -51,6 +51,7 @@ html
       table.tablesorter#statz
         thead
           tr
+            th Name
             th Handle
             th Team
             th Gender
@@ -66,6 +67,7 @@ html
             - user = usersHash[String(stat.user_id)]
             - if (user)
               tr
+                td= user['name']
                 td= user['handle']
                 td= user['team']
                 td= user['gender']
@@ -80,5 +82,5 @@ html
     script(type="text/javascript")
       $("#statz").tablesorter({
         widgets: ['zebra'],
-        sortList: [[3,1]]
+        sortList: [[4,1]]
       });

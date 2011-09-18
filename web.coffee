@@ -205,6 +205,7 @@ app.get '/statz', (request, response, next) ->
           _.each allUsers, (user) ->
             u =
               handle: user.handle
+              name: user.name
               team: user.team
               gender: if user.female then 'female' else 'male'
             usersHash[user._id] = u

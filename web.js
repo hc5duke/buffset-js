@@ -287,6 +287,7 @@
               var u;
               u = {
                 handle: user.handle,
+                name: user.name,
                 team: user.team,
                 gender: user.female ? 'female' : 'male'
               };
