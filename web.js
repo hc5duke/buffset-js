@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, conRedis, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, buffsetTypes, conRedis, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -44,6 +44,7 @@
   dbPass = '';
   dbName = 'buffsets';
   teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
+  buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank'];
   app.configure(function() {
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
@@ -322,6 +323,21 @@
               statz = _.sortBy(statz, function(stat) {
                 return -stat.total;
               });
+              _.each(statz, function(stat) {
+                var mean, values, varFunc, varSum;
+                varFunc = function(memo, num) {
+                  var diff;
+                  diff = num - mean;
+                  return memo + diff * diff;
+                };
+                values = _.map(buffsetTypes, function(type) {
+                  return stat[type];
+                });
+                mean = stat.total / buffsetTypes.length;
+                varSum = _.reduce(values, varFunc, 0);
+                return stat.variance = (varSum / buffsetTypes.length).toFixed(1);
+              });
+              console.log(statz);
               return User.findAll({
                 active: true
               }, {}, function(allUsers) {

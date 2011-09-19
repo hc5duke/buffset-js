@@ -46,6 +46,7 @@ teamNames   = [
   process.env.TEAM_1_NAME || 'Amir'
   process.env.TEAM_2_NAME || 'Johnny'
 ]
+buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank']
 
 app.configure ->
   app.set 'views', __dirname + '/views'
@@ -223,6 +224,15 @@ app.get '/statz', (request, response, next) ->
             out.global[doc.type]++
           buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
             statz = _.sortBy statz, (stat) -> -stat.total
+            _.each statz, (stat) ->
+              varFunc = (memo, num) ->
+                diff = (num - mean)
+                memo + diff * diff
+              values = _.map buffsetTypes, (type) -> stat[type]
+              mean = stat.total / buffsetTypes.length
+              varSum = _.reduce values, varFunc, 0
+              stat.variance = (varSum / buffsetTypes.length).toFixed(1)
+            console.log statz
             User.findAll {active: true}, {}, (allUsers) ->
               usersHash = {}
               _.each allUsers, (user) ->

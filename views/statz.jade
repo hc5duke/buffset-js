@@ -11,15 +11,16 @@ mixin user(user, stat)
     td= user['team']
     td= user['gender']
     - if (stat)
-      - each type in ['total', 'pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank']
+      - each type in ['total', 'pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'variance']
         td= stat[type]
     - else
-      - each i in [0,0,0,0,0,0,0]
+      - each i in [0,0,0,0,0,0,0,0]
         td 0
 
 !!! 5
 html
   head
+    title Tapjoy Buffset Statz
     link(href="/stylesheets/bootstrap-1.0.0.min.css", media="screen", rel="stylesheet", type="text/css")
     link(rel="icon", href="/images/favicon.png", type="image/x-icon")
     link(href="/stylesheets/themes/blue/style.css", media="screen", rel="stylesheet", type="text/css")
@@ -76,6 +77,7 @@ html
             th Pull-ups
             th Wall-sits
             th Planks
+            th Variance
         tbody
           - each stat in statz
             - user_id = String(stat.user_id)
