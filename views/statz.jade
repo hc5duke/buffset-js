@@ -60,7 +60,8 @@ html
           td
             h3 Total plank sets: #{statz[0] ? statz[0].global.plank : 0}
 
-      .last_updated Last Updated: #{new Date(Date.parse(updatedAt))}
+      .last_updated Last Updated: 
+        span
       table.tablesorter#statz
         thead
           tr
@@ -90,3 +91,5 @@ html
         widgets: ['zebra'],
         sortList: [[4,1]]
       });
+      var updatedAt = new Date(Date.parse('#{updatedAt}'));
+      $('.last_updated span').text(String(updatedAt));
