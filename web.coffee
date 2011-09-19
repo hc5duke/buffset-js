@@ -232,7 +232,6 @@ app.get '/statz', (request, response, next) ->
               mean = stat.total / buffsetTypes.length
               varSum = _.reduce values, varFunc, 0
               stat.variance = (varSum / buffsetTypes.length).toFixed(1)
-            console.log statz
             User.findAll {active: true}, {}, (allUsers) ->
               usersHash = {}
               _.each allUsers, (user) ->

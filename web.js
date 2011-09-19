@@ -337,7 +337,6 @@
                 varSum = _.reduce(values, varFunc, 0);
                 return stat.variance = (varSum / buffsetTypes.length).toFixed(1);
               });
-              console.log(statz);
               return User.findAll({
                 active: true
               }, {}, function(allUsers) {
