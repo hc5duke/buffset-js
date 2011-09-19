@@ -25,7 +25,6 @@ extension = new openid.AttributeExchange
   "http://axschema.org/contact/email": "required"
   "http://axschema.org/namePerson/first": "required"
   "http://axschema.org/namePerson/last": "required"
-relyingParty = new openid.RelyingParty verifyUrl, null, false, false, [extension]
 
 # Pusher
 pusherChannel   = 'tapjoy_channel'
@@ -84,6 +83,7 @@ if redisConfig
 else
   redisClient = redis.createClient()
 
+relyingParty = new openid.RelyingParty verifyUrl, null, false, false, [extension]
 server = new Server dbHost, dbPort, auto_reconnect: true
 db = new Db dbName, server
 User.setDb db
@@ -143,7 +143,9 @@ app.get '/authenticate', (request, response) ->
 
 app.get '/verify', (request, response, next) ->
   relyingParty.verifyAssertion request, (error, result) ->
-    return response.send 'Failure :(' if error || !result.authenticated
+    if error || !result.authenticated
+      console.log error, result
+      return response.send 'Failure :('
     service = User.newService result
     User.findOne 'services.uid': service.uid, (user) ->
       if user
@@ -220,6 +222,7 @@ app.get '/statz', (request, response, next) ->
             out.global.total++
             out.global[doc.type]++
           buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
+            statz = _.sortBy statz, (stat) -> -stat.total
             User.findAll {active: true}, {}, (allUsers) ->
               usersHash = {}
               _.each allUsers, (user) ->

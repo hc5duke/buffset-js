@@ -25,7 +25,6 @@
     "http://axschema.org/namePerson/first": "required",
     "http://axschema.org/namePerson/last": "required"
   });
-  relyingParty = new openid.RelyingParty(verifyUrl, null, false, false, [extension]);
   pusherChannel = 'tapjoy_channel';
   pusherConfig = [];
   pusherConfig[7] = '7999';
@@ -97,6 +96,7 @@
   } else {
     redisClient = redis.createClient();
   }
+  relyingParty = new openid.RelyingParty(verifyUrl, null, false, false, [extension]);
   server = new Server(dbHost, dbPort, {
     auto_reconnect: true
   });
@@ -178,6 +178,7 @@
     return relyingParty.verifyAssertion(request, function(error, result) {
       var service;
       if (error || !result.authenticated) {
+        console.log(error, result);
         return response.send('Failure :(');
       }
       service = User.newService(result);
@@ -318,6 +319,9 @@
             return buffsets.group({
               user_id: true
             }, conditions, init, reduce, function(error, statz) {
+              statz = _.sortBy(statz, function(stat) {
+                return -stat.total;
+              });
               return User.findAll({
                 active: true
               }, {}, function(allUsers) {

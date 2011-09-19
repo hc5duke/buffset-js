@@ -11,21 +11,11 @@ mixin user(user, stat)
     td= user['team']
     td= user['gender']
     - if (stat)
-      td= stat['total']
-      td= stat['pushup']
-      td= stat['situp']
-      td= stat['lunge']
-      td= stat['pullup']
-      td= stat['wallsits']
-      td= stat['plank']
+      - each type in ['total', 'pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank']
+        td= stat[type]
     - else
-      td 0
-      td 0
-      td 0
-      td 0
-      td 0
-      td 0
-      td 0
+      - each i in [0,0,0,0,0,0,0]
+        td 0
 
 !!! 5
 html
