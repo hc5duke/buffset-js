@@ -63,6 +63,9 @@ app.configure 'development', ->
     store: new RedisStore
       maxAge: oneYear
   verifyUrl = 'http://localhost:'+port+'/verify'
+  # skip google auth
+  User.withCurrentUser = (session, callback) -> User.findOne {}, callback
+
 redisConfig = false
 app.configure 'production', ->
   oneYear = 31557600000

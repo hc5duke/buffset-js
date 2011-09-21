@@ -65,7 +65,10 @@
         maxAge: oneYear
       })
     }));
-    return verifyUrl = 'http://localhost:' + port + '/verify';
+    verifyUrl = 'http://localhost:' + port + '/verify';
+    return User.withCurrentUser = function(session, callback) {
+      return User.findOne({}, callback);
+    };
   });
   redisConfig = false;
   app.configure('production', function() {
