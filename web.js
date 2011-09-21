@@ -281,7 +281,7 @@
         locals.currentUser = currentUser;
         return renderWithLocals(locals, 'statz', next, response);
       };
-      key = "statz[" + timeframe + "]";
+      key = "statz." + timeframe;
       return redisClient.get(key, function(err, locals) {
         if (locals) {
           return callback(JSON.parse(locals));
@@ -509,21 +509,34 @@
   app.get('/chartz', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
       return User.withChartableUsers(function(activeUsers) {
-        var locals, series;
-        series = _.map(activeUsers, function(user) {
-          return user.buffsetData();
-        });
-        locals = {
-          title: 'Competitive Chartz',
-          activeUsers: activeUsers,
-          currentUser: currentUser,
-          series: series,
-          pieData: {
-            size: 1,
-            data: User.combinedBuffsetPieData(activeUsers)
-          }
+        var callback, key;
+        key = "chartz.individual";
+        callback = function(series) {
+          var locals;
+          locals = {
+            title: 'Competitive Chartz',
+            activeUsers: activeUsers,
+            currentUser: currentUser,
+            series: series,
+            pieData: {
+              size: 1,
+              data: User.combinedBuffsetPieData(activeUsers)
+            }
+          };
+          return renderWithLocals(locals, 'chartz/competitive', next, response);
         };
-        return renderWithLocals(locals, 'chartz/competitive', next, response);
+        return redisClient.get(key, function(err, series) {
+          if (series) {
+            return callback(JSON.parse(series));
+          } else {
+            series = _.map(activeUsers, function(user) {
+              return user.buffsetData();
+            });
+            redisClient.set(key, JSON.stringify(series));
+            redisClient.expire(key, 60);
+            return callback(series);
+          }
+        });
       });
     });
   });

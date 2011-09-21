@@ -209,7 +209,7 @@ app.get '/statz', (request, response, next) ->
       locals.title = 'Statz'
       locals.currentUser = currentUser
       renderWithLocals locals, 'statz', next, response
-    key = "statz[" + timeframe + "]"
+    key = "statz." + timeframe
     redisClient.get key, (err, locals) ->
       if locals
         callback JSON.parse(locals)
@@ -340,17 +340,25 @@ app.post '/admin/users/:id', (request, response, next) ->
 app.get '/chartz', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
     User.withChartableUsers (activeUsers) ->
-      series = _.map activeUsers, (user) -> user.buffsetData()
-      locals =
-        title: 'Competitive Chartz'
-        activeUsers: activeUsers
-        currentUser: currentUser
-        series: series
-        pieData:
-          size: 1
-          data: User.combinedBuffsetPieData(activeUsers)
-      renderWithLocals locals, 'chartz/competitive', next, response
-
+      key = "chartz.individual"
+      callback = (series) ->
+        locals =
+          title: 'Competitive Chartz'
+          activeUsers: activeUsers
+          currentUser: currentUser
+          series: series
+          pieData:
+            size: 1
+            data: User.combinedBuffsetPieData(activeUsers)
+        renderWithLocals locals, 'chartz/competitive', next, response
+      redisClient.get key, (err, series) ->
+        if series
+          callback JSON.parse(series)
+        else
+          series = _.map activeUsers, (user) -> user.buffsetData()
+          redisClient.set key, JSON.stringify(series)
+          redisClient.expire key, 60
+          callback series
 
 app.get '/chartz/team', (request, response, next) ->
   User.withCurrentUser request.session, (currentUser) ->
