@@ -5,16 +5,20 @@ mixin timeframeLink(length, text)
     a(href='/statz?timeframe=#{length}')= text
 
 mixin user(user, stat)
-  tr
-    td= user['name']
-    td= user['handle']
-    td= user['team']
-    td= user['gender']
+  - class_name = ''
+  - if (String(user._id) == String(currentUser._id))
+    - class_name = 'myself'
+  tr(class = class_name)
+    - each type in ['name', 'handle', 'team', 'gender']
+      td= user[type]
     - if (stat)
-      - each type in ['total', 'pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'variance']
-        td= stat[type]
+      - each type in ['total', 'pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank']
+        - class_name = ''
+        - if (Number(stat[type]) >= Number(max[type]))
+          - class_name = 'max'
+        td(class=class_name)= stat[type]
     - else
-      - each i in [0,0,0,0,0,0,0,0]
+      - each i in [0,0,0,0,0,0,0]
         td 0
 
 !!! 5
@@ -77,7 +81,6 @@ html
             th Pull-ups
             th Wall-sits
             th Planks
-            th Variance
         tbody
           - each stat in statz
             - user_id = String(stat.user_id)

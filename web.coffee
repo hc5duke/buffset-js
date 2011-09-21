@@ -231,33 +231,32 @@ app.get '/statz', (request, response, next) ->
             out.global[doc.type]++
           buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
             statz = _.sortBy statz, (stat) -> -stat.total
+            max = total: 0, pushup: 0, situp: 0, lunge: 0, pullup: 0, wallsits: 0, plank: 0
             _.each statz, (stat) ->
-              varFunc = (memo, num) ->
-                diff = (num - mean)
-                memo + diff * diff
-              values = _.map buffsetTypes, (type) -> stat[type]
-              mean = stat.total / buffsetTypes.length
-              varSum = _.reduce values, varFunc, 0
-              stat.variance = (varSum / buffsetTypes.length).toFixed(1)
+              max.total = stat.total if stat.total > max.total
+              _.each buffsetTypes, (type) ->
+                max[type] = stat[type] if stat[type] > max[type]
+
             User.findAll {active: true}, {}, (allUsers) ->
               usersHash = {}
               _.each allUsers, (user) ->
                 u =
+                  _id: String(user._id)
                   handle: user.handle
                   name: user.name
                   team: teamNames[user.team]
                   gender: if user.female then 'female' else 'male'
                 usersHash[user._id] = u
-              User.withCurrentUser request.session, (currentUser) ->
-                locals =
-                  usersHash: usersHash
-                  timeframe: timeframe
-                  timeframeText: timeframeText
-                  statz: statz
-                  updatedAt: new Date()
-                callback locals
-                redisClient.set key, JSON.stringify(locals)
-                redisClient.expire key, 60
+              locals =
+                usersHash: usersHash
+                timeframe: timeframe
+                timeframeText: timeframeText
+                statz: statz
+                max: max
+                updatedAt: new Date()
+              callback locals
+              redisClient.set key, JSON.stringify(locals)
+              redisClient.expire key, 60
 
 
 app.get '/users/:id', (request, response, next) ->

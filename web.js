@@ -326,22 +326,28 @@
             return buffsets.group({
               user_id: true
             }, conditions, init, reduce, function(error, statz) {
+              var max;
               statz = _.sortBy(statz, function(stat) {
                 return -stat.total;
               });
+              max = {
+                total: 0,
+                pushup: 0,
+                situp: 0,
+                lunge: 0,
+                pullup: 0,
+                wallsits: 0,
+                plank: 0
+              };
               _.each(statz, function(stat) {
-                var mean, values, varFunc, varSum;
-                varFunc = function(memo, num) {
-                  var diff;
-                  diff = num - mean;
-                  return memo + diff * diff;
-                };
-                values = _.map(buffsetTypes, function(type) {
-                  return stat[type];
+                if (stat.total > max.total) {
+                  max.total = stat.total;
+                }
+                return _.each(buffsetTypes, function(type) {
+                  if (stat[type] > max[type]) {
+                    return max[type] = stat[type];
+                  }
                 });
-                mean = stat.total / buffsetTypes.length;
-                varSum = _.reduce(values, varFunc, 0);
-                return stat.variance = (varSum / buffsetTypes.length).toFixed(1);
               });
               return User.findAll({
                 active: true
@@ -351,6 +357,7 @@
                 _.each(allUsers, function(user) {
                   var u;
                   u = {
+                    _id: String(user._id),
                     handle: user.handle,
                     name: user.name,
                     team: teamNames[user.team],
@@ -358,18 +365,17 @@
                   };
                   return usersHash[user._id] = u;
                 });
-                return User.withCurrentUser(request.session, function(currentUser) {
-                  locals = {
-                    usersHash: usersHash,
-                    timeframe: timeframe,
-                    timeframeText: timeframeText,
-                    statz: statz,
-                    updatedAt: new Date()
-                  };
-                  callback(locals);
-                  redisClient.set(key, JSON.stringify(locals));
-                  return redisClient.expire(key, 60);
-                });
+                locals = {
+                  usersHash: usersHash,
+                  timeframe: timeframe,
+                  timeframeText: timeframeText,
+                  statz: statz,
+                  max: max,
+                  updatedAt: new Date()
+                };
+                callback(locals);
+                redisClient.set(key, JSON.stringify(locals));
+                return redisClient.expire(key, 60);
               });
             });
           });

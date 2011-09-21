@@ -35,3 +35,10 @@ table.tablesorter {
 table.tablesorter thead tr .header {
   background-position: right bottom;
 }
+table.tablesorter tbody tr.myself td {
+  background-color: #d8ffd8;
+}
+table.tablesorter tbody tr td.max {
+  font-weight: bold;
+  background-color: #ffd8d8;
+}
