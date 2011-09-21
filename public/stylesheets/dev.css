@@ -1,0 +1,9 @@
+#body-top {
+  background-image: url(/images/buffsets-top.jpg) !important;
+}
+#body-middle {
+  background-image: url(/images/buffsets-middle.jpg) !important;
+}
+#body-bottom {
+  background-image: url(/images/buffsets-bottom.jpg) !important;
+}

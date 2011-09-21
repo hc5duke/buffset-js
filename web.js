@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, buffsetTypes, conRedis, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, buffsetTypes, conRedis, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, nodeEnv, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -71,8 +71,10 @@
     };
   });
   redisConfig = false;
+  nodeEnv = 'development';
   app.configure('production', function() {
     var oneYear, x, _ref;
+    nodeEnv = 'production';
     oneYear = 31557600000;
     app.use(express.static(__dirname + '/public', {
       maxAge: oneYear
@@ -127,6 +129,7 @@
       locals = _.extend(locals, {
         activeUsersCount: userData.activeCount,
         usersCount: userData.count,
+        nodeEnv: nodeEnv,
         Helpers: Helpers
       });
       view = 'views/' + view + '.jade';

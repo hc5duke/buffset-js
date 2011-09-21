@@ -3,8 +3,11 @@ head
     title Tapjoy Buffsets.js - #{title}
   - else
     title Tapjoy Buffsets.js
-  link(href='https://fonts.googleapis.com/css?family=Walter+Turncoat&v2', rel='stylesheet', type='text/css')
+  - if (nodeEnv == 'production')
+    link(href='https://fonts.googleapis.com/css?family=Walter+Turncoat&v2', rel='stylesheet', type='text/css')
   link(href="/stylesheets/bootstrap-1.0.0.min.css", media="screen", rel="stylesheet", type="text/css")
   link(href="/stylesheets/application.css", media="screen", rel="stylesheet", type="text/css")
+  - if (nodeEnv != 'production')
+    link(href="/stylesheets/dev.css", media="screen", rel="stylesheet", type="text/css")
   link(rel="icon", href="/images/favicon.png", type="image/x-icon")
   script(src="/javascripts/jquery.js", type="text/javascript")

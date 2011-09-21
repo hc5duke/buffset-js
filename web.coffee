@@ -67,7 +67,10 @@ app.configure 'development', ->
   User.withCurrentUser = (session, callback) -> User.findOne {}, callback
 
 redisConfig = false
+nodeEnv = 'development'
+
 app.configure 'production', ->
+  nodeEnv = 'production'
   oneYear = 31557600000
   app.use express.static __dirname + '/public', maxAge: oneYear
   app.use express.errorHandler()
@@ -108,6 +111,7 @@ renderWithLocals = (locals, view, next, response) ->
     locals = _.extend locals,
       activeUsersCount: userData.activeCount
       usersCount: userData.count
+      nodeEnv: nodeEnv
       Helpers: Helpers
     view = 'views/' + view + '.jade'
     jade.renderFile view, {locals: locals}, (error, html) ->
