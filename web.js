@@ -513,6 +513,7 @@
     });
   });
   app.get('/chartz', function(request, response, next) {
+    return response.send('You people borked buffsets chartz :(');
     return User.withCurrentUser(request.session, function(currentUser) {
       return User.withChartableUsers(function(activeUsers) {
         var callback, key;
@@ -547,6 +548,7 @@
     });
   });
   app.get('/chartz/team', function(request, response, next) {
+    return response.send('You people borked buffsets chartz :(');
     return User.withCurrentUser(request.session, function(currentUser) {
       return User.withChartableUsers(function(activeUsers) {
         var index, locals, series, teams;

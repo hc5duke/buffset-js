@@ -337,6 +337,7 @@ app.post '/admin/users/:id', (request, response, next) ->
 
 
 app.get '/chartz', (request, response, next) ->
+  return response.send('You people borked buffsets chartz :(')
   User.withCurrentUser request.session, (currentUser) ->
     User.withChartableUsers (activeUsers) ->
       key = "chartz.individual"
@@ -360,6 +361,7 @@ app.get '/chartz', (request, response, next) ->
           callback series
 
 app.get '/chartz/team', (request, response, next) ->
+  return response.send 'You people borked buffsets chartz :('
   User.withCurrentUser request.session, (currentUser) ->
     User.withChartableUsers (activeUsers) ->
       teams = _.groupBy activeUsers, (user) -> user.team
