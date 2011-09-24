@@ -519,7 +519,6 @@
         key = "chartz.individual";
         callback = function(series) {
           var locals;
-          console.log(series);
           locals = {
             title: 'Competitive Chartz',
             activeUsers: activeUsers,
@@ -533,11 +532,28 @@
           return renderWithLocals(locals, 'chartz/competitive', next, response);
         };
         return redisClient.get(key, function(err, series) {
+          var latestDate;
           if (series) {
             return callback(JSON.parse(series));
           } else {
             series = _.map(activeUsers, function(user) {
               return user.buffsetData();
+            });
+            latestDate = 0;
+            _.each(series, function(ser) {
+              var date;
+              date = ser.data[ser.data.length - 1][0] - 0;
+              if (date > latestDate) {
+                return latestDate = date;
+              }
+            });
+            _.each(series, function(ser) {
+              var date, point;
+              date = ser.data[ser.data.length - 1][0] - 0;
+              if (date < latestDate) {
+                point = [new Date(latestDate), ser.data[ser.data.length - 1][1]];
+                return ser.data.push(point);
+              }
             });
             redisClient.set(key, JSON.stringify(series));
             redisClient.expire(key, 60);

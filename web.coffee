@@ -341,7 +341,6 @@ app.get '/chartz', (request, response, next) ->
     User.withChartableUsers (activeUsers) ->
       key = "chartz.individual"
       callback = (series) ->
-        console.log series
         locals =
           title: 'Competitive Chartz'
           activeUsers: activeUsers
@@ -356,6 +355,16 @@ app.get '/chartz', (request, response, next) ->
           callback JSON.parse(series)
         else
           series = _.map activeUsers, (user) -> user.buffsetData()
+          latestDate = 0
+          _.each series, (ser) ->
+            date = ser.data[ser.data.length-1][0] - 0
+            latestDate = date if date > latestDate
+          _.each series, (ser) ->
+            date = ser.data[ser.data.length-1][0] - 0
+            if date < latestDate
+              point = [new Date(latestDate), ser.data[ser.data.length-1][1]]
+              ser.data.push point
+
           redisClient.set key, JSON.stringify(series)
           redisClient.expire key, 60
           callback series
