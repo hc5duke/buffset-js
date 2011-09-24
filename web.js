@@ -566,11 +566,12 @@
   app.get('/chartz/team', function(request, response, next) {
     return User.withCurrentUser(request.session, function(currentUser) {
       return User.withChartableUsers(function(activeUsers) {
-        var index, locals, series, teams;
+        var index, latestDate, locals, series, teams;
         teams = _.groupBy(activeUsers, function(user) {
           return user.team;
         });
         index = -1;
+        latestDate = 0;
         series = _.map(teams, function(team) {
           var buffsets, currentCount, data, lastTime;
           buffsets = _.map(team, function(user) {
@@ -589,6 +590,9 @@
             if (lastTime === time) {
               return null;
             } else {
+              if (latestDate < time) {
+                latestDate = time;
+              }
               lastTime = time;
               return [new Date(time), currentCount + 1];
             }
@@ -599,6 +603,14 @@
             name: teamNames[index],
             data: data.reverse()
           };
+        });
+        _.each(series, function(ser) {
+          var lastPoint, point;
+          lastPoint = _.last(ser.data);
+          if (lastPoint[0] - 0 < latestDate) {
+            point = [new Date(latestDate), lastPoint[1]];
+            return ser.data.push(point);
+          }
         });
         locals = {
           title: 'Competitive Chartz',

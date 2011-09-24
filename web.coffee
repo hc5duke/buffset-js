@@ -374,6 +374,7 @@ app.get '/chartz/team', (request, response, next) ->
     User.withChartableUsers (activeUsers) ->
       teams = _.groupBy activeUsers, (user) -> user.team
       index = -1
+      latestDate = 0
       series = _.map teams, (team) ->
         buffsets = _.map team, (user) ->
           _.map (user.buffsets), (buffset) -> Math.floor(buffset.created_at / 3600000) * 3600000
@@ -386,11 +387,17 @@ app.get '/chartz/team', (request, response, next) ->
           if lastTime == time
             null
           else
+            latestDate = time if latestDate < time
             lastTime = time
             [ new Date(time), currentCount+1 ]
         index++
         data = _.compact data
         name: teamNames[index], data: data.reverse()
+      _.each series, (ser) ->
+        lastPoint = _.last ser.data
+        if lastPoint[0]-0 < latestDate
+          point = [new Date(latestDate), lastPoint[1]]
+          ser.data.push point
       locals =
         title: 'Competitive Chartz'
         activeUsers: activeUsers
