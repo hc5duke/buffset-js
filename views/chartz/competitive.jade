@@ -26,6 +26,7 @@ html
         var data = series[ser].data;
         for (var arr in data) {
           series[ser].data[arr][0] = Date.parse(data[arr][0]);
+          //series[ser].data[arr][0] = new Date(data[arr][0]);
         }
       }
       createChart(series);

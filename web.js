@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, buffsetTypes, conRedis, connect, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, nodeEnv, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, buffsetTypes, connect, connectRedis, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, nodeEnv, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -7,13 +7,13 @@
   querystring = require('querystring');
   jade = require('jade');
   mongo = require('mongodb');
-  Server = mongo.Server;
-  Db = mongo.Db;
   redis = require('redis');
-  conRedis = require('connect-redis');
-  RedisStore = conRedis(express);
+  connectRedis = require('connect-redis');
   _ = require('underscore');
   Pusher = require('node-pusher');
+  Server = mongo.Server;
+  Db = mongo.Db;
+  RedisStore = connectRedis(express);
   Helpers = require('./lib/helpers');
   User = require('./lib/user');
   Buffset = require('./lib/buffset');
@@ -513,13 +513,13 @@
     });
   });
   app.get('/chartz', function(request, response, next) {
-    return response.send('You people borked buffsets chartz :(');
     return User.withCurrentUser(request.session, function(currentUser) {
       return User.withChartableUsers(function(activeUsers) {
         var callback, key;
         key = "chartz.individual";
         callback = function(series) {
           var locals;
+          console.log(series);
           locals = {
             title: 'Competitive Chartz',
             activeUsers: activeUsers,

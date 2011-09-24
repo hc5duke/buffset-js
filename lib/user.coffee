@@ -17,11 +17,20 @@ class User
     @team       = Number(user.team || 0)
 
   buffsetData: () ->
-    currentCount = 0
-    data = _.map @buffsets, (buffset) ->
-      currentCount += 1
-      [ buffset.created_at, currentCount ]
-    name: @handle, data: data
+    currentCount = @buffsets.length
+    lastTime = 0
+    sets = @buffsets.reverse()
+    data = _.map sets, (buffset) ->
+      currentCount -= 1
+      time = buffset.created_at
+      time = Math.floor(time / 3600000) * 3600000
+      if lastTime == time
+        null
+      else
+        lastTime = time
+        [ new Date(time), currentCount+1 ]
+    data = _.compact data
+    name: @handle, data: data.reverse()
 
   buffsetPieData: () ->
     User.buffsetPieData @buffsets

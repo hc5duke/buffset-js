@@ -5,13 +5,13 @@ url         = require 'url'
 querystring = require 'querystring'
 jade        = require 'jade'
 mongo       = require 'mongodb'
-Server      = mongo.Server
-Db          = mongo.Db
 redis       = require 'redis'
-conRedis    = require 'connect-redis'
-RedisStore  = conRedis express
+connectRedis= require 'connect-redis'
 _           = require 'underscore'
 Pusher      = require 'node-pusher'
+Server      = mongo.Server
+Db          = mongo.Db
+RedisStore  = connectRedis express
 Helpers     = require './lib/helpers'
 User        = require './lib/user'
 Buffset     = require './lib/buffset'
@@ -337,11 +337,11 @@ app.post '/admin/users/:id', (request, response, next) ->
 
 
 app.get '/chartz', (request, response, next) ->
-  return response.send('You people borked buffsets chartz :(')
   User.withCurrentUser request.session, (currentUser) ->
     User.withChartableUsers (activeUsers) ->
       key = "chartz.individual"
       callback = (series) ->
+        console.log series
         locals =
           title: 'Competitive Chartz'
           activeUsers: activeUsers
