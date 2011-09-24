@@ -1,5 +1,5 @@
 (function() {
-  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, buffsetTypes, connect, connectRedis, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, nodeEnv, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
+  var Buffset, Db, Helpers, Pusher, RedisStore, Server, User, app, authorizedToEdit, buffsetDetails, buffsetTypes, connect, connectRedis, db, dbHost, dbName, dbPass, dbPort, dbUser, express, extension, jade, mongo, nodeEnv, openid, port, pusher, pusherChannel, pusherConfig, querystring, redis, redisClient, redisConfig, relyingParty, renderWithLocals, server, teamNames, url, verifyUrl, _;
   express = require('express');
   connect = require('connect');
   openid = require('openid');
@@ -44,7 +44,8 @@
   dbPass = '';
   dbName = 'buffsets';
   teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
-  buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank'];
+  buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'leglift'];
+  buffsetDetails = [['pushup', '20 Push-ups'], ['situp', '20 Sit-ups'], ['lunge', '20 Lunges'], ['pullup', '5 Pull-ups'], ['wallsits', '1m Wall sit'], ['plank', '45s Plank'], ['leglift', '15 Leg-lifts']];
   app.configure(function() {
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
@@ -255,7 +256,8 @@
         locals = {
           title: 'Users',
           teams: teams,
-          currentUser: currentUser
+          currentUser: currentUser,
+          buffsetDetails: buffsetDetails
         };
         return renderWithLocals(locals, 'users/index', next, response);
       });
@@ -279,6 +281,7 @@
       callback = function(locals) {
         locals.title = 'Statz';
         locals.currentUser = currentUser;
+        locals.buffsetTypes = buffsetTypes;
         return renderWithLocals(locals, 'statz', next, response);
       };
       key = "statz." + timeframe;
@@ -301,22 +304,14 @@
             }
             init = {
               total: 0,
-              pushup: 0,
-              situp: 0,
-              lunge: 0,
-              pullup: 0,
-              wallsits: 0,
-              plank: 0,
               global: {
-                total: 0,
-                pushup: 0,
-                situp: 0,
-                lunge: 0,
-                pullup: 0,
-                wallsits: 0,
-                plank: 0
+                total: 0
               }
             };
+            _.each(buffsetTypes, function(type) {
+              init[type] = 0;
+              return init.global[type] = 0;
+            });
             reduce = function(doc, out) {
               out.total++;
               out[doc.type]++;
@@ -331,14 +326,11 @@
                 return -stat.total;
               });
               max = {
-                total: 0,
-                pushup: 0,
-                situp: 0,
-                lunge: 0,
-                pullup: 0,
-                wallsits: 0,
-                plank: 0
+                total: 0
               };
+              _.each(buffsetTypes, function(type) {
+                return max[type] = 0;
+              });
               _.each(statz, function(stat) {
                 if (stat.total > max.total) {
                   max.total = stat.total;

@@ -20,8 +20,7 @@ mixin teamScores(team)
           a(href='#')= user.tally()
         .hidden#edit_current_user_form
           .center
-            - workouts = [['pushup', '20 Push-ups'], ['situp', '20 Sit-ups'], ['lunge', '20 Lunges'], ['pullup', '5 Pull-ups'], ['wallsits', '1m Wall sit'], ['plank', '45s Plank']]
-            - each workout in workouts
+            - each workout in buffsetDetails
               mixin buffset(user, workout)
           .clear
           input.btn#cancel_edit(type="submit", value="cancel")

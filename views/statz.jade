@@ -12,13 +12,17 @@ mixin user(user, stat)
     - each type in ['name', 'handle', 'team', 'gender']
       td= user[type]
     - if (stat)
-      - each type in ['total', 'pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank']
+      - class_name = ''
+      - if (Number(stat.total) >= Number(max.total))
+        - class_name = 'max'
+      td(class=class_name)= stat.total
+      - each type in buffsetTypes
         - class_name = ''
         - if (Number(stat[type]) >= Number(max[type]))
           - class_name = 'max'
         td(class=class_name)= stat[type]
     - else
-      - each i in [0,0,0,0,0,0,0]
+      - each i in [0,0,0,0,0,0,0,0]
         td 0
 
 !!! 5
@@ -64,6 +68,13 @@ html
             h3 Total wall-sit sets: #{statz[0] ? statz[0].global.wallsits : 0}
           td
             h3 Total plank sets: #{statz[0] ? statz[0].global.plank : 0}
+        tr
+          td
+            h3 Total leg-lift sets: #{statz[0] ? statz[0].global.leglift : 0}
+          td
+            h3 &nbsp;
+          td
+            h3 &nbsp;
 
       .last_updated Last Updated: 
         span
@@ -81,6 +92,7 @@ html
             th Pull-ups
             th Wall-sits
             th Planks
+            th Leg-lifts
         tbody
           - each stat in statz
             - user_id = String(stat.user_id)

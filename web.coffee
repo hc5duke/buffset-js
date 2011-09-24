@@ -46,7 +46,17 @@ teamNames   = [
   process.env.TEAM_1_NAME || 'Amir'
   process.env.TEAM_2_NAME || 'Johnny'
 ]
-buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank']
+# TODO: dry?
+buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'leglift']
+buffsetDetails = [
+  ['pushup', '20 Push-ups']
+  ['situp', '20 Sit-ups']
+  ['lunge', '20 Lunges']
+  ['pullup', '5 Pull-ups']
+  ['wallsits', '1m Wall sit']
+  ['plank', '45s Plank']
+  ['leglift', '15 Leg-lifts']
+]
 
 app.configure ->
   app.set 'views', __dirname + '/views'
@@ -189,7 +199,7 @@ app.get '/users', (request, response, next) ->
         {name: teamNames[0], score: scores[0], users: members[0], order: 0}
         {name: teamNames[1], score: scores[1], users: members[1], order: 1}
       ]
-      locals = title: 'Users', teams: teams, currentUser: currentUser
+      locals = title: 'Users', teams: teams, currentUser: currentUser, buffsetDetails: buffsetDetails
       renderWithLocals locals, 'users/index', next, response
 
 
@@ -208,6 +218,7 @@ app.get '/statz', (request, response, next) ->
     callback = (locals) ->
       locals.title = 'Statz'
       locals.currentUser = currentUser
+      locals.buffsetTypes = buffsetTypes
       renderWithLocals locals, 'statz', next, response
     key = "statz." + timeframe
     redisClient.get key, (err, locals) ->
@@ -220,10 +231,10 @@ app.get '/statz', (request, response, next) ->
             conditions.created_at = $gt: new Date(new Date() - 7 * 24 * 3600 * 1000)
           if timeframe == '24'
             conditions.created_at = $gt: new Date(new Date() - 24 * 3600 * 1000)
-          init =
-            total: 0, pushup: 0, situp: 0, lunge: 0, pullup: 0, wallsits: 0, plank: 0,
-            global:
-              total: 0, pushup: 0, situp: 0, lunge: 0, pullup: 0, wallsits: 0, plank: 0
+          init = total: 0, global: total: 0
+          _.each buffsetTypes, (type) ->
+            init[type] = 0
+            init.global[type] = 0
           reduce = (doc, out) ->
             out.total++
             out[doc.type]++
@@ -231,7 +242,8 @@ app.get '/statz', (request, response, next) ->
             out.global[doc.type]++
           buffsets.group {user_id: true}, conditions, init, reduce, (error, statz) ->
             statz = _.sortBy statz, (stat) -> -stat.total
-            max = total: 0, pushup: 0, situp: 0, lunge: 0, pullup: 0, wallsits: 0, plank: 0
+            max = total: 0
+            _.each buffsetTypes, (type) -> max[type] = 0
             _.each statz, (stat) ->
               max.total = stat.total if stat.total > max.total
               _.each buffsetTypes, (type) ->
