@@ -709,9 +709,11 @@
           });
           activeUsers = _.select(activeUsers, function(user) {
             return _.each(user.buffsets, function(buffset) {
-              var created_at;
+              var created_at, day, hour;
               created_at = buffset.created_at;
-              return days[created_at.getDay()][created_at.getHours()] += 1;
+              day = created_at.getUTCDay();
+              hour = (created_at.getUTCHours() + 24 - 7) % 24;
+              return days[day][hour] += 1;
             });
           });
           data = _.flatten(days.slice(1, -1));

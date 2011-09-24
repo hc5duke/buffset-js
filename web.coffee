@@ -470,7 +470,10 @@ app.get '/chartz/punch', (request, response, next) ->
         activeUsers = _.select activeUsers, (user) ->
           _.each user.buffsets, (buffset) ->
             created_at = buffset.created_at
-            days[created_at.getDay()][created_at.getHours()] += 1
+            # hacky!
+            day = created_at.getUTCDay()
+            hour = (created_at.getUTCHours() + 24 - 7) % 24
+            days[day][hour] += 1
         data = _.flatten days[1..-2]
         max = _.max data
         _.times 24, () ->
