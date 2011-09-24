@@ -370,21 +370,27 @@ app.get '/chartz', (request, response, next) ->
           callback series
 
 app.get '/chartz/team', (request, response, next) ->
-  return response.send 'You people borked buffsets chartz :('
   User.withCurrentUser request.session, (currentUser) ->
     User.withChartableUsers (activeUsers) ->
       teams = _.groupBy activeUsers, (user) -> user.team
       index = -1
       series = _.map teams, (team) ->
-        buffsets = _.map team, (user) -> user.buffsets
+        buffsets = _.map team, (user) ->
+          _.map (user.buffsets), (buffset) -> Math.floor(buffset.created_at / 3600000) * 3600000
         buffsets = _.flatten buffsets
-        buffsets = _.sortBy buffsets, (buffset) -> buffset.created_at
-        currentCount = 0
-        data = _.map buffsets, (buffset) ->
-          currentCount += 1
-          [ buffset.created_at, currentCount ]
+        buffsets = _.sortBy buffsets, (buffset) -> buffset
+        currentCount = buffsets.length
+        lastTime = 0
+        data = _.map buffsets.reverse(), (time) ->
+          currentCount--
+          if lastTime == time
+            null
+          else
+            lastTime = time
+            [ new Date(time), currentCount+1 ]
         index++
-        name: teamNames[index], data: data
+        data = _.compact data
+        name: teamNames[index], data: data.reverse()
       locals =
         title: 'Competitive Chartz'
         activeUsers: activeUsers

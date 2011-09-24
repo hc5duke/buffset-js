@@ -564,7 +564,6 @@
     });
   });
   app.get('/chartz/team', function(request, response, next) {
-    return response.send('You people borked buffsets chartz :(');
     return User.withCurrentUser(request.session, function(currentUser) {
       return User.withChartableUsers(function(activeUsers) {
         var index, locals, series, teams;
@@ -573,23 +572,32 @@
         });
         index = -1;
         series = _.map(teams, function(team) {
-          var buffsets, currentCount, data;
+          var buffsets, currentCount, data, lastTime;
           buffsets = _.map(team, function(user) {
-            return user.buffsets;
+            return _.map(user.buffsets, function(buffset) {
+              return Math.floor(buffset.created_at / 3600000) * 3600000;
+            });
           });
           buffsets = _.flatten(buffsets);
           buffsets = _.sortBy(buffsets, function(buffset) {
-            return buffset.created_at;
+            return buffset;
           });
-          currentCount = 0;
-          data = _.map(buffsets, function(buffset) {
-            currentCount += 1;
-            return [buffset.created_at, currentCount];
+          currentCount = buffsets.length;
+          lastTime = 0;
+          data = _.map(buffsets.reverse(), function(time) {
+            currentCount--;
+            if (lastTime === time) {
+              return null;
+            } else {
+              lastTime = time;
+              return [new Date(time), currentCount + 1];
+            }
           });
           index++;
+          data = _.compact(data);
           return {
             name: teamNames[index],
-            data: data
+            data: data.reverse()
           };
         });
         locals = {
