@@ -21,7 +21,7 @@ class User
     lastTime = 0
     sets = @buffsets.reverse()
     data = _.map sets, (buffset) ->
-      currentCount -= 1
+      currentCount--
       time = buffset.created_at
       time = Math.floor(time / 3600000) * 3600000
       if lastTime == time
