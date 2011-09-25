@@ -95,6 +95,9 @@ h3.warn {
   max-width: 200px;
   float: left;
 }
+.user .count {
+  font-size: 20px;
+}
 .user .handle {
   text-align: center;
   border-bottom: 3px solid #0c7579;
