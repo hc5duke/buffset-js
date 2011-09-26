@@ -23,12 +23,12 @@ class User
     data = _.map sets, (buffset) ->
       currentCount--
       time = buffset.created_at
-      time = Math.floor(time / 3600000) * 3600000
+      time = Math.floor(time / 3600000)
       if lastTime == time
         null
       else
         lastTime = time
-        [ new Date(time), currentCount+1 ]
+        [ time, currentCount+1 ]
     data = _.compact data
     name: @handle, data: data.reverse()
 

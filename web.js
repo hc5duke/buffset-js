@@ -139,9 +139,8 @@
       }, function(error, html) {
         if (error) {
           return next(error);
-        } else {
-          return response.send(html);
         }
+        return response.send(html);
       });
     });
   };
@@ -543,7 +542,7 @@
               var date, point;
               date = ser.data[ser.data.length - 1][0] - 0;
               if (date < latestDate) {
-                point = [new Date(latestDate), ser.data[ser.data.length - 1][1]];
+                point = [latestDate, ser.data[ser.data.length - 1][1]];
                 return ser.data.push(point);
               }
             });

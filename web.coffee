@@ -125,10 +125,8 @@ renderWithLocals = (locals, view, next, response) ->
       Helpers: Helpers
     view = 'views/' + view + '.jade'
     jade.renderFile view, {locals: locals}, (error, html) ->
-      if error
-        next error
-      else
-        response.send(html)
+      return next error if error
+      response.send(html)
 
 authorizedToEdit = (currentUser, authorizedUserId, adminOnly) ->
   currentUser.admin || (!adminOnly && authorizedUserId == String(currentUser._id))
@@ -374,7 +372,7 @@ app.get '/chartz', (request, response, next) ->
           _.each series, (ser) ->
             date = ser.data[ser.data.length-1][0] - 0
             if date < latestDate
-              point = [new Date(latestDate), ser.data[ser.data.length-1][1]]
+              point = [latestDate, ser.data[ser.data.length-1][1]]
               ser.data.push point
 
           redisClient.set key, JSON.stringify(series)

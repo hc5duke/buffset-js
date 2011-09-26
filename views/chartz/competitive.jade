@@ -25,10 +25,10 @@ html
       for (var ser in series) {
         var data = series[ser].data;
         for (var arr in data) {
-          series[ser].data[arr][0] = Date.parse(data[arr][0]);
-          //series[ser].data[arr][0] = new Date(data[arr][0]);
+          series[ser].data[arr][0] = data[arr][0] * 3600000;
         }
       }
+      console.log(series);
       createChart(series);
       if (pieData.size == 1) {
         var pieSeries = [{ type: 'pie', name: '', data: pieData.data }];
