@@ -567,7 +567,7 @@
           var buffsets, currentCount, data, lastTime;
           buffsets = _.map(team, function(user) {
             return _.map(user.buffsets, function(buffset) {
-              return Math.floor(buffset.created_at / 3600000) * 3600000;
+              return Math.floor(buffset.created_at / 3600000);
             });
           });
           buffsets = _.flatten(buffsets);
@@ -585,7 +585,7 @@
                 latestDate = time;
               }
               lastTime = time;
-              return [new Date(time), currentCount + 1];
+              return [time, currentCount + 1];
             }
           });
           index++;
@@ -599,7 +599,7 @@
           var lastPoint, point;
           lastPoint = _.last(ser.data);
           if (lastPoint[0] - 0 < latestDate) {
-            point = [new Date(latestDate), lastPoint[1]];
+            point = [latestDate, lastPoint[1]];
             return ser.data.push(point);
           }
         });
