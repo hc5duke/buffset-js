@@ -44,8 +44,8 @@
   dbPass = '';
   dbName = 'buffsets';
   teamNames = [process.env.TEAM_1_NAME || 'Amir', process.env.TEAM_2_NAME || 'Johnny'];
-  buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'leglift'];
-  buffsetDetails = [['pushup', '20 Push-ups'], ['situp', '20 Sit-ups'], ['lunge', '20 Lunges'], ['pullup', '5 Pull-ups'], ['wallsits', '1m Wall sit'], ['plank', '45s Plank'], ['leglift', '15 Leg-lifts']];
+  buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'leglift', 'dip'];
+  buffsetDetails = [['pushup', '20 Push-ups'], ['situp', '20 Sit-ups'], ['lunge', '20 Lunges'], ['pullup', '5 Pull-ups'], ['wallsits', '1m Wall sit'], ['plank', '45s Plank'], ['leglift', '15 Leg-lifts'], ['dip', '10 Dips']];
   app.configure(function() {
     app.set('views', __dirname + '/views');
     app.set('view engine', 'jade');
