@@ -72,7 +72,7 @@ html
           td
             h3 Total leg-lift sets: #{statz[0] ? statz[0].global.leglift : 0}
           td
-            h3 &nbsp;
+            h3 Total dip sets: #{statz[0] ? statz[0].global.dip : 0}
           td
             h3 &nbsp;
 
@@ -93,6 +93,7 @@ html
             th Wall-sits
             th Planks
             th Leg-lifts
+            th Dips
         tbody
           - each stat in statz
             - user_id = String(stat.user_id)

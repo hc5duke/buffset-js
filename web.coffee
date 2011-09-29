@@ -47,7 +47,7 @@ teamNames   = [
   process.env.TEAM_2_NAME || 'Johnny'
 ]
 # TODO: dry?
-buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'leglift']
+buffsetTypes = ['pushup', 'situp', 'lunge', 'pullup', 'wallsits', 'plank', 'leglift', 'dip']
 buffsetDetails = [
   ['pushup', '20 Push-ups']
   ['situp', '20 Sit-ups']
@@ -56,6 +56,7 @@ buffsetDetails = [
   ['wallsits', '1m Wall sit']
   ['plank', '45s Plank']
   ['leglift', '15 Leg-lifts']
+  ['dip', '10 Dips']
 ]
 
 app.configure ->
