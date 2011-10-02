@@ -12,20 +12,21 @@ mixin teamScores(team)
   - each user in team.users
     - myUser = (currentUser && user._id == String(currentUser._id))
     - userClass = myUser ? 'current_user' : ''
-    .user(id="user_" + user._id, class=userClass)
-      .handle
-        a(href='/users/' + user._id, title=user.name)= user.handle
-      - if (myUser)
-        .count#edit_current_user
-          a(href='#')= user.tally()
-        .hidden#edit_current_user_form
-          .center
-            - each workout in buffsetDetails
-              mixin buffset(user, workout)
-          .clear
-          input.btn#cancel_edit(type="submit", value="cancel")
-      - else
-        .count= user.tally()
+    - if (user.buffsets.length > 0 || myUser)
+      .user(id="user_" + user._id, class=userClass)
+        .handle
+          a(href='/users/' + user._id, title=user.name)= user.handle
+        - if (myUser)
+          .count#edit_current_user
+            a(href='#')= user.tally()
+          .hidden#edit_current_user_form
+            .center
+              - each workout in buffsetDetails
+                mixin buffset(user, workout)
+            .clear
+            input.btn#cancel_edit(type="submit", value="cancel")
+        - else
+          .count= user.tally()
 
 !!! 5
 html
