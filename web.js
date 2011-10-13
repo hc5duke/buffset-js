@@ -366,7 +366,7 @@
                 };
                 callback(locals);
                 redisClient.set(key, JSON.stringify(locals));
-                return redisClient.expire(key, 60);
+                return redisClient.expire(key, 60 * 60 * 24);
               });
             });
           });
@@ -548,7 +548,7 @@
               }
             });
             redisClient.set(key, JSON.stringify(series));
-            redisClient.expire(key, 60);
+            redisClient.expire(key, 60 * 60 * 24);
             return callback(series);
           }
         });

@@ -267,7 +267,7 @@ app.get '/statz', (request, response, next) ->
                 updatedAt: new Date()
               callback locals
               redisClient.set key, JSON.stringify(locals)
-              redisClient.expire key, 60
+              redisClient.expire key, 60 * 60 * 24
 
 
 app.get '/users/:id', (request, response, next) ->
@@ -378,7 +378,7 @@ app.get '/chartz', (request, response, next) ->
               ser.data.push point
 
           redisClient.set key, JSON.stringify(series)
-          redisClient.expire key, 60
+          redisClient.expire key, 60 * 60 * 24
           callback series
 
 app.get '/chartz/team', (request, response, next) ->
