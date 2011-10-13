@@ -329,6 +329,7 @@ app.post '/users/:id', (request, response, next) ->
 
 
 app.post '/users/:id/buffsets/create', (request, response, next) ->
+  return response.send 'nope'
   User.withCurrentUser request.session, (currentUser) ->
     if authorizedToEdit(currentUser, request.params.id)
       Buffset.create request.params.id, request.body.user.buffset_type, () ->

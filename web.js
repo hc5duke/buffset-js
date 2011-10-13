@@ -478,6 +478,7 @@
     });
   });
   app.post('/users/:id/buffsets/create', function(request, response, next) {
+    return response.send('nope');
     return User.withCurrentUser(request.session, function(currentUser) {
       if (authorizedToEdit(currentUser, request.params.id)) {
         return Buffset.create(request.params.id, request.body.user.buffset_type, function() {
